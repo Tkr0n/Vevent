@@ -41,6 +41,12 @@ public class LLMClient {
         plugin.getLogger().info("[LLMClient] Inicializado con modelo '" + model + "'. API key: " + (apiKey != null && !apiKey.isEmpty() ? "configurada" : "AUSENTE"));
     }
 
+    private String maskKey(String key) {
+        if (key == null || key.isEmpty()) return "VACIA";
+        if (key.length() <= 8) return key.substring(0, 3) + "***";
+        return key.substring(0, 6) + "..." + key.substring(key.length() - 4);
+    }
+
     public CompletableFuture<LootProfile> fetchEventDataAsync(String tier, String tierRules) {
         String systemPrompt = "Eres un generador de botín para Minecraft. Genera un botín para el tier: " + tier + ". " +
                 "Reglas: " + tierRules + ". " +
@@ -65,7 +71,8 @@ public class LLMClient {
 
         String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":generateContent";
 
-        plugin.getLogger().info("[LLMClient] Enviando petición a " + geminiUrl + " para tier '" + tier + "'");
+        plugin.getLogger().info("[LLMClient] Enviando petición a " + geminiUrl + " para tier '" + tier + "'" +
+                " | key=" + maskKey(this.apiKey));
 
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(geminiUrl))
