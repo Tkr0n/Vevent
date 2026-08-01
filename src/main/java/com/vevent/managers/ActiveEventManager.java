@@ -28,6 +28,7 @@ public class ActiveEventManager {
     private Location eventLocation;
     private LootProfile activeProfile;
     private String eventTier;
+    private final java.util.UUID eventId = java.util.UUID.randomUUID();
     private final List<Player> participants = new ArrayList<>();
     private final List<Block> activeChests = new ArrayList<>();
     private final List<Entity> activeMobs = new ArrayList<>();
@@ -51,6 +52,10 @@ public class ActiveEventManager {
     }
 
     public void openInvitations(LootProfile profile, String tier) {
+        if (isAcceptingPlayers || eventInProgress) {
+            plugin.getLogger().warning("[Evento] No se puede iniciar: ya hay un evento activo o en fase de invitación.");
+            return;
+        }
         this.activeProfile = profile;
         this.eventTier = tier;
         this.participants.clear();
@@ -147,15 +152,7 @@ public class ActiveEventManager {
             double dx = Math.cos(angle) * 25;
             double dz = Math.sin(angle) * 25;
             Location tpLoc = eventLocation.clone().add(dx, 0, dz);
-            int groundY = world.getHighestBlockYAt(tpLoc);
-            int eventY = eventLocation.getBlockY();
-            if (Math.abs(groundY - eventY) > 15) {
-                groundY = eventY;
-                while (groundY > world.getMinHeight() && !world.getBlockAt(tpLoc.getBlockX(), groundY, tpLoc.getBlockZ()).getType().isSolid()) {
-                    groundY--;
-                }
-            }
-            tpLoc.setY(groundY + 1);
+            tpLoc.setY(findSafeY(world, tpLoc.getBlockX(), tpLoc.getBlockZ(), eventLocation.getBlockY()));
             preloadPlayerChunk(world, tpLoc);
             tpLocations.add(tpLoc);
         }
@@ -242,6 +239,32 @@ public class ActiveEventManager {
         world.getChunkAt(loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
     }
 
+    private int findSafeY(World world, int bx, int bz, int refY) {
+        int groundY = world.getHighestBlockYAt(bx, bz);
+        Block block = world.getBlockAt(bx, groundY, bz);
+        while (groundY > world.getMinHeight() && isUnsafeBlock(block.getType())) {
+            groundY--;
+            block = world.getBlockAt(bx, groundY, bz);
+        }
+        if (Math.abs(groundY - refY) > 15) {
+            groundY = refY;
+            while (groundY > world.getMinHeight() && !world.getBlockAt(bx, groundY, bz).getType().isSolid()) {
+                groundY--;
+            }
+        }
+        return groundY + 1;
+    }
+
+    private boolean isUnsafeBlock(Material mat) {
+        return mat == Material.AIR || mat == Material.WATER || mat == Material.LAVA
+                || mat.name().contains("LEAVES") || mat.name().contains("LOG")
+                || mat == Material.SNOW || mat == Material.ICE
+                || mat == Material.CACTUS || mat == Material.SWEET_BERRY_BUSH
+                || mat == Material.POWDER_SNOW || mat == Material.COBWEB
+                || mat == Material.BAMBOO || mat == Material.SUGAR_CANE
+                || mat == Material.TALL_GRASS || mat.name().contains("SAPLING");
+    }
+
     private void setWorldBorder(World world) {
         WorldBorder border = world.getWorldBorder();
         oldBorderCenter = border.getCenter();
@@ -284,8 +307,8 @@ public class ActiveEventManager {
             for (int i = 0; i < count; i++) {
                 int spawnX = eventLocation.getBlockX() + random.nextInt(30) - 15;
                 int spawnZ = eventLocation.getBlockZ() + random.nextInt(30) - 15;
-                int groundY = world.getHighestBlockYAt(spawnX, spawnZ);
-                Location spawnLoc = new Location(world, spawnX + 0.5, groundY + 1, spawnZ + 0.5);
+                Location spawnLoc = new Location(world, spawnX + 0.5,
+                        findSafeY(world, spawnX, spawnZ, eventLocation.getBlockY()), spawnZ + 0.5);
                 Entity entity = world.spawnEntity(spawnLoc, entityType);
                 entity.getPersistentDataContainer().set(mobKey, PersistentDataType.BYTE, (byte) 1);
                 entity.setCustomName("§c" + formatMobName(mobTypeName) + " de evento");
@@ -554,6 +577,7 @@ public class ActiveEventManager {
     }
     
     public boolean isEventInProgress() { return eventInProgress; }
+    public boolean isAcceptingOrInProgress() { return isAcceptingPlayers || eventInProgress; }
     public List<Block> getActiveChests() { return activeChests; }
     public List<Block> getBeaconBlocks() { return beaconBlocks; }
     public boolean areAllMobsDead() { return activeMobs.isEmpty(); }

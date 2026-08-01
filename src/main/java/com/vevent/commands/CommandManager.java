@@ -29,6 +29,10 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 sender.sendMessage("§aCalendario generado.");
             }
             if (subCommand.equals("start")) {
+                if (plugin.getActiveEventManager().isAcceptingOrInProgress()) {
+                    sender.sendMessage("§cYa hay un evento en curso. Usa /vevent cancel o /vevent stop primero.");
+                    return true;
+                }
                 String tier = args.length >= 2 ? args[1].toLowerCase() : null;
                 if (tier != null && !tier.equals("easy") && !tier.equals("medium") && !tier.equals("hardcore")) {
                     sender.sendMessage("§cTier inválido. Usa: easy, medium o hardcore.");
