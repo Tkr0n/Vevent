@@ -37,6 +37,19 @@ public class ArenaListener implements Listener {
         var meta = item.getItemMeta();
         if (meta == null) return;
 
+        var craftedKey = plugin.getActiveEventManager().getCraftedScrollKey();
+        if (meta.getPersistentDataContainer().has(craftedKey, PersistentDataType.BOOLEAN)) {
+            Location bedLoc = event.getPlayer().getBedSpawnLocation();
+            if (bedLoc == null) {
+                event.getPlayer().sendMessage("§cNo tienes una cama asignada. Duerme en una primero.");
+                return;
+            }
+            event.getPlayer().teleport(bedLoc);
+            event.getPlayer().sendMessage("§a¡Has vuelto a tu cama!");
+            item.setAmount(item.getAmount() - 1);
+            return;
+        }
+
         var scrollKey = plugin.getActiveEventManager().getScrollKey();
         if (!meta.getPersistentDataContainer().has(scrollKey, PersistentDataType.LONG)) return;
 

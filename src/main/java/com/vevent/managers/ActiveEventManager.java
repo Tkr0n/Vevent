@@ -20,6 +20,7 @@ public class ActiveEventManager {
     private final Random random;
     private final NamespacedKey mobKey;
     private final NamespacedKey scrollKey;
+    private final NamespacedKey craftedScrollKey;
     private boolean isAcceptingPlayers = false;
     private boolean eventInProgress = false;
     private Location eventLocation;
@@ -39,6 +40,7 @@ public class ActiveEventManager {
         this.random = new Random();
         this.mobKey = new NamespacedKey(plugin, "vevent_mob");
         this.scrollKey = new NamespacedKey(plugin, "vevent_scroll_time");
+        this.craftedScrollKey = new NamespacedKey(plugin, "vevent_crafted_scroll");
     }
 
     public void openInvitations(LootProfile profile, String tier) {
@@ -447,6 +449,7 @@ public class ActiveEventManager {
     public boolean isEventInProgress() { return eventInProgress; }
     public List<Block> getActiveChests() { return activeChests; }
     public NamespacedKey getScrollKey() { return scrollKey; }
+    public NamespacedKey getCraftedScrollKey() { return craftedScrollKey; }
 
     public void cancelInvitation() {
         if (!isAcceptingPlayers) return;
