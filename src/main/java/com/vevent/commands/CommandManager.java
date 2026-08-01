@@ -23,6 +23,14 @@ public class CommandManager implements CommandExecutor {
                 plugin.getSchedulerManager().generateSchedule(8, 3, 120);
                 sender.sendMessage("§aCalendario generado.");
             }
+            if (subCommand.equals("start")) {
+                plugin.getSchedulerManager().startEventNow();
+                sender.sendMessage("§aSolicitando botín a la IA e iniciando evento...");
+            }
+            if (subCommand.equals("reload")) {
+                plugin.reloadConfig();
+                sender.sendMessage("§aConfiguración recargada.");
+            }
         }
         return true;
     }

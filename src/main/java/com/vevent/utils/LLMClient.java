@@ -12,6 +12,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 
 public class LLMClient {
 
@@ -30,6 +31,14 @@ public class LLMClient {
                 .version(HttpClient.Version.HTTP_2)
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
+
+        if (apiKey == null || apiKey.isEmpty() || apiKey.equalsIgnoreCase("PON_TU_API_KEY_AQUI")) {
+            plugin.getLogger().warning("[LLMClient] API key no configurada o usa el valor por defecto. Las peticiones a Gemini fallarán.");
+        }
+        if (model == null || model.isEmpty()) {
+            plugin.getLogger().warning("[LLMClient] Modelo no configurado en llm-generation.model.");
+        }
+        plugin.getLogger().info("[LLMClient] Inicializado con modelo '" + model + "'. API key: " + (apiKey != null && !apiKey.isEmpty() ? "configurada" : "AUSENTE"));
     }
 
     public CompletableFuture<LootProfile> fetchEventDataAsync(String tier, String tierRules) {
@@ -54,24 +63,58 @@ public class LLMClient {
         generationConfig.addProperty("responseMimeType", "application/json");
         requestBody.add("generationConfig", generationConfig);
 
-        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":generateContent?key=" + this.apiKey;
+        String geminiUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + this.model + ":generateContent";
+
+        plugin.getLogger().info("[LLMClient] Enviando petición a " + geminiUrl + " para tier '" + tier + "'");
 
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(geminiUrl))
                 .timeout(Duration.ofMinutes(1))
                 .header("Content-Type", "application/json")
+                .header("x-goog-api-key", this.apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()));
+
+        long startTime = System.currentTimeMillis();
 
         return httpClient.sendAsync(requestBuilder.build(), HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
-                    if (response.statusCode() != 200) return null;
+                    long elapsed = System.currentTimeMillis() - startTime;
+                    int status = response.statusCode();
+
+                    if (status != 200) {
+                        String bodyPreview = response.body();
+                        if (bodyPreview != null && bodyPreview.length() > 1000) {
+                            bodyPreview = bodyPreview.substring(0, 1000) + "...";
+                        }
+                        plugin.getLogger().warning("[LLMClient] HTTP " + status + " tras " + elapsed + "ms");
+                        plugin.getLogger().warning("[LLMClient] Respuesta del servidor: " + bodyPreview);
+                        return null;
+                    }
+
+                    plugin.getLogger().info("[LLMClient] HTTP 200 en " + elapsed + "ms. Parseando respuesta...");
                     try {
                         JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
                         String rawLootJson = jsonResponse.getAsJsonArray("candidates").get(0).getAsJsonObject()
                                 .getAsJsonObject("content").getAsJsonArray("parts").get(0).getAsJsonObject()
                                 .get("text").getAsString();
-                        return gson.fromJson(rawLootJson, LootProfile.class);
-                    } catch (Exception e) { return null; }
-                }).exceptionally(ex -> null);
+                        LootProfile profile = gson.fromJson(rawLootJson, LootProfile.class);
+                        plugin.getLogger().info("[LLMClient] Botín generado correctamente: tier=" + profile.getTier()
+                                + ", mobs=" + profile.getMobs() + ", enchantments=" + profile.getEnchantments());
+                        return profile;
+                    } catch (Exception e) {
+                        plugin.getLogger().log(Level.SEVERE, "[LLMClient] Error al parsear respuesta JSON: " + e.getMessage(), e);
+                        String bodyPreview = response.body();
+                        if (bodyPreview != null && bodyPreview.length() > 1500) {
+                            bodyPreview = bodyPreview.substring(0, 1500) + "...";
+                        }
+                        plugin.getLogger().warning("[LLMClient] Body recibido: " + bodyPreview);
+                        return null;
+                    }
+                }).exceptionally(ex -> {
+                    long elapsed = System.currentTimeMillis() - startTime;
+                    plugin.getLogger().log(Level.SEVERE,
+                            "[LLMClient] Excepción HTTP tras " + elapsed + "ms: " + ex.getClass().getSimpleName() + " - " + ex.getMessage(), ex);
+                    return null;
+                });
     }
 }

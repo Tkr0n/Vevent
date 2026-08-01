@@ -85,11 +85,35 @@ public class EventSchedulerManager {
         scheduledEvents.removeAll(toRemove);
     }
 
+    public void startEventNow() {
+        plugin.getLogger().info("[Scheduler] Iniciando evento manualmente...");
+        String rules = plugin.getConfig().getString("llm-generation.tiers.titan.prompt-rules", "");
+        llmClient.fetchEventDataAsync("titan", rules).thenAccept(lootProfile -> {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (lootProfile != null) {
+                    this.cachedLootProfile = lootProfile;
+                    plugin.getLogger().info("[Scheduler] Botín generado por IA para evento manual: " + lootProfile.getTier());
+                } else {
+                    plugin.getLogger().warning("[Scheduler] La IA no generó botín. Iniciando evento sin perfil de botín.");
+                }
+                Bukkit.broadcastMessage("§a¡El evento ha comenzado! Usen /vevent accept.");
+                activeEventManager.openInvitations(cachedLootProfile);
+                this.cachedLootProfile = null;
+            });
+        });
+    }
+
     private void prepareEventWithAI(String tier) {
         String rules = plugin.getConfig().getString("llm-generation.tiers." + tier + ".prompt-rules", "");
+        plugin.getLogger().info("[Scheduler] Preparando evento con IA para tier '" + tier + "'");
         llmClient.fetchEventDataAsync(tier, rules).thenAccept(lootProfile -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
-                if (lootProfile != null) this.cachedLootProfile = lootProfile;
+                if (lootProfile != null) {
+                    this.cachedLootProfile = lootProfile;
+                    plugin.getLogger().info("[Scheduler] Botín cacheado para tier '" + lootProfile.getTier() + "'");
+                } else {
+                    plugin.getLogger().warning("[Scheduler] La IA no devolvió botín para tier '" + tier + "'");
+                }
             });
         });
     }

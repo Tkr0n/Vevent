@@ -15,14 +15,20 @@ public class VEventPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         this.saveDefaultConfig();
-        
+
         String llmEndpoint = getConfig().getString("llm-generation.endpoint");
         String llmModel = getConfig().getString("llm-generation.model");
         String llmApiKey = getConfig().getString("llm-generation.api-key");
-        
+
+        if (llmModel == null || llmModel.isEmpty()) {
+            getLogger().warning("llm-generation.model no configurado en config.yml. Las peticiones a la IA fallarán.");
+        }
+        if (llmApiKey == null || llmApiKey.isEmpty() || llmApiKey.equalsIgnoreCase("PON_TU_API_KEY_AQUI")) {
+            getLogger().warning("llm-generation.api-key no configurada o usa el valor por defecto. Las peticiones a Gemini fallarán.");
+        }
+
         this.llmClient = new LLMClient(this, llmEndpoint, llmModel, llmApiKey);
         this.activeEventManager = new ActiveEventManager(this);
-        // Inyectando ambos gestores correctamente
         this.schedulerManager = new EventSchedulerManager(this, llmClient, activeEventManager);
 
         getCommand("vevent").setExecutor(new CommandManager(this));
