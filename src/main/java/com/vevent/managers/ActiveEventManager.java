@@ -12,6 +12,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.*;
 import java.util.*;
 
 public class ActiveEventManager {
@@ -28,8 +29,9 @@ public class ActiveEventManager {
     private final List<Block> activeChests = new ArrayList<>();
     private final List<Entity> activeMobs = new ArrayList<>();
     private final List<Block> activeSpawners = new ArrayList<>();
+    private final List<Block> beaconBlocks = new ArrayList<>();
+    private final Map<Player, Scoreboard> previousScoreboards = new HashMap<>();
     private BukkitTask eventLoopTask;
-    private BukkitTask beamTask;
     private int secondsElapsed = 0;
 
     public ActiveEventManager(VEventPlugin plugin) {
@@ -102,16 +104,29 @@ public class ActiveEventManager {
         world.setTime(13000);
         world.setStorm(false);
         world.setThundering(false);
+
+        preloadChunks(world, eventLocation, 1);
+        startBeam();
+
         for (Player p : participants) {
             double angle = random.nextDouble() * 2 * Math.PI;
-            double dx = Math.cos(angle) * 50;
-            double dz = Math.sin(angle) * 50;
+            double dx = Math.cos(angle) * 25;
+            double dz = Math.sin(angle) * 25;
             Location tpLoc = eventLocation.clone().add(dx, 0, dz);
-            tpLoc.setY(world.getHighestBlockYAt(tpLoc) + 1);
+            int groundY = world.getHighestBlockYAt(tpLoc);
+            int eventY = eventLocation.getBlockY();
+            if (Math.abs(groundY - eventY) > 15) {
+                groundY = eventY;
+                while (groundY > world.getMinHeight() && !world.getBlockAt(tpLoc.getBlockX(), groundY, tpLoc.getBlockZ()).getType().isSolid()) {
+                    groundY--;
+                }
+            }
+            tpLoc.setY(groundY + 1);
             p.teleport(tpLoc);
-            p.sendMessage("§eEl epicentro está a 50 bloques. ¡Busca el haz de luz!");
+            p.setFallDistance(0);
+            p.sendMessage("§eEl epicentro está a 25 bloques. ¡Busca el haz de luz!");
         }
-        startBeam();
+        assignScoreboards();
         if (activeProfile != null) {
             spawnEventMobs();
             spawnEventChests();
@@ -146,6 +161,17 @@ public class ActiveEventManager {
         return false;
     }
 
+    private void preloadChunks(World world, Location center, int radius) {
+        int cx = center.getBlockX() >> 4;
+        int cz = center.getBlockZ() >> 4;
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                world.getChunkAt(cx + dx, cz + dz);
+            }
+        }
+        plugin.getLogger().info("[Evento] Chunks precargados en radio " + radius + " alrededor del epicentro.");
+    }
+
     private void spawnEventMobs() {
         if (activeProfile == null || activeProfile.getMobs() == null) return;
         World world = eventLocation.getWorld();
@@ -161,8 +187,10 @@ public class ActiveEventManager {
                 continue;
             }
             for (int i = 0; i < count; i++) {
-                Location spawnLoc = eventLocation.clone().add(
-                        random.nextInt(30) - 15, 1, random.nextInt(30) - 15);
+                int spawnX = eventLocation.getBlockX() + random.nextInt(30) - 15;
+                int spawnZ = eventLocation.getBlockZ() + random.nextInt(30) - 15;
+                int groundY = world.getHighestBlockYAt(spawnX, spawnZ);
+                Location spawnLoc = new Location(world, spawnX + 0.5, groundY + 1, spawnZ + 0.5);
                 Entity entity = world.spawnEntity(spawnLoc, entityType);
                 entity.getPersistentDataContainer().set(mobKey, PersistentDataType.BYTE, (byte) 1);
                 activeMobs.add(entity);
@@ -282,6 +310,7 @@ public class ActiveEventManager {
         activeMobs.removeIf(Entity::isDead);
 
         int secondsLeft = maxSeconds - secondsElapsed;
+        updateScoreboards(secondsLeft);
 
         if (secondsLeft == 300) {
             Bukkit.broadcastMessage("§eQuedan 5 minutos de evento " + getTierDisplay() + "§e.");
@@ -304,37 +333,90 @@ public class ActiveEventManager {
         eventInProgress = false;
         if (eventLoopTask != null) eventLoopTask.cancel();
         stopBeam();
+        restoreScoreboards();
         eventLocation.getWorld().setTime(0);
         Bukkit.broadcastMessage("§aEvento concluido: " + reason);
         for (Player player : participants) if (player.isOnline()) giveReturnScroll(player);
         for (Entity mob : activeMobs) if (!mob.isDead()) mob.remove();
         for (Block chest : activeChests) chest.setType(Material.AIR);
         for (Block spawner : activeSpawners) spawner.setType(Material.AIR);
-        activeMobs.clear(); activeChests.clear(); activeSpawners.clear(); participants.clear();
+        activeMobs.clear(); activeChests.clear(); activeSpawners.clear(); beaconBlocks.clear(); participants.clear();
+    }
+
+    private void assignScoreboards() {
+        previousScoreboards.clear();
+        for (Player p : participants) {
+            previousScoreboards.put(p, p.getScoreboard());
+            Scoreboard board = Bukkit.getScoreboardManager().getNewScoreboard();
+            Objective obj = board.registerNewObjective("vevent", "dummy", "§6§l⚔ Evento " + getTierDisplay());
+            obj.setDisplaySlot(DisplaySlot.SIDEBAR);
+            p.setScoreboard(board);
+        }
+    }
+
+    private void updateScoreboards(int secondsLeft) {
+        int mobsAlive = activeMobs.size();
+        long chestsRemaining = activeChests.stream().filter(b -> b.getType() == Material.CHEST).count();
+        int mins = secondsLeft / 60;
+        int secs = secondsLeft % 60;
+        String timeStr = String.format("%d:%02d", mins, secs);
+
+        for (Player p : participants) {
+            if (!p.isOnline()) continue;
+            Scoreboard board = p.getScoreboard();
+            Objective obj = board.getObjective("vevent");
+            if (obj == null) continue;
+
+            for (String entry : board.getEntries()) {
+                board.resetScores(entry);
+            }
+
+            obj.getScore("§7§m                    ").setScore(4);
+            obj.getScore("§cMobs restantes: §f" + mobsAlive).setScore(3);
+            obj.getScore("§6Cofres por abrir: §f" + chestsRemaining).setScore(2);
+            obj.getScore("§eTiempo: §f" + timeStr).setScore(1);
+            obj.getScore("§7§m                    §r").setScore(0);
+        }
+    }
+
+    private void restoreScoreboards() {
+        for (Map.Entry<Player, Scoreboard> entry : previousScoreboards.entrySet()) {
+            Player p = entry.getKey();
+            if (p.isOnline()) {
+                p.setScoreboard(entry.getValue());
+            }
+        }
+        previousScoreboards.clear();
     }
 
     private void startBeam() {
         stopBeam();
-        beamTask = new BukkitRunnable() {
-            @Override
-            public void run() {
-                if (!eventInProgress || eventLocation == null) { cancel(); return; }
-                World world = eventLocation.getWorld();
-                Location base = eventLocation.clone();
-                base.setY(eventLocation.getBlockY());
-                for (int y = 0; y < 120; y += 3) {
-                    world.spawnParticle(Particle.END_ROD, base.getX(), base.getY() + y, base.getZ(),
-                            1, 0, 0, 0, 0);
+        World world = eventLocation.getWorld();
+        int bx = eventLocation.getBlockX();
+        int bz = eventLocation.getBlockZ();
+        int by = eventLocation.getBlockY() - 1;
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                Location ironLoc = new Location(world, bx + dx, by, bz + dz);
+                Material existing = ironLoc.getBlock().getType();
+                if (existing == Material.AIR || existing.isSolid()) {
+                    ironLoc.getBlock().setType(Material.IRON_BLOCK);
+                    beaconBlocks.add(ironLoc.getBlock());
                 }
             }
-        }.runTaskTimer(plugin, 0L, 10L);
+        }
+
+        Location beaconLoc = new Location(world, bx + 0.5, by + 1, bz + 0.5);
+        beaconLoc.getBlock().setType(Material.BEACON);
+        beaconBlocks.add(beaconLoc.getBlock());
     }
 
     private void stopBeam() {
-        if (beamTask != null) {
-            beamTask.cancel();
-            beamTask = null;
+        for (Block block : beaconBlocks) {
+            block.setType(Material.AIR);
         }
+        beaconBlocks.clear();
     }
 
     private void giveReturnScroll(Player player) {
