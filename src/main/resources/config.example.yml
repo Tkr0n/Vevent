@@ -1,0 +1,30 @@
+global-settings:
+  prefix: '§8[§dvEvent§8] §r'
+  allow-pvp: true
+  allow-griefing: true
+
+event-rules:
+  duration-minutes: 15
+  invite-timeout-seconds: 60
+  no-bed-error: '§c¡No puedes participar! Debes dormir en una cama primero para fijar tu hogar.'
+
+return-scroll:
+  name: '§6§lPergamino de Retorno'
+  expiration-minutes: 5
+  message-full-inv: '§cTu inventario estaba lleno. ¡El pergamino cayó a tus pies!'
+
+scheduling:
+  default-period-hours: 8
+  max-events-per-period: 3
+  min-cooldown-minutes: 120
+
+llm-generation:
+  enabled: true
+  endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/'
+  model: 'gemini-1.5-flash'
+  api-key: 'PON_TU_API_KEY_AQUI'
+  tiers:
+    basic:
+      prompt-rules: "Genera encantamientos nivel 1 y 2. Máximo 15 mobs comunes."
+    titan:
+      prompt-rules: "Genera encantamientos nivel 3 y superiores. Ítems no crafteables. Máximo 30 mobs variados."

@@ -1,0 +1,44 @@
+package com.vevent;
+
+import com.vevent.commands.CommandManager;
+import com.vevent.listeners.ArenaListener;
+import com.vevent.managers.ActiveEventManager;
+import com.vevent.managers.EventSchedulerManager;
+import com.vevent.utils.LLMClient;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public class VEventPlugin extends JavaPlugin {
+    private LLMClient llmClient;
+    private EventSchedulerManager schedulerManager;
+    private ActiveEventManager activeEventManager;
+
+    @Override
+    public void onEnable() {
+        this.saveDefaultConfig();
+        
+        String llmEndpoint = getConfig().getString("llm-generation.endpoint");
+        String llmModel = getConfig().getString("llm-generation.model");
+        String llmApiKey = getConfig().getString("llm-generation.api-key");
+        
+        this.llmClient = new LLMClient(this, llmEndpoint, llmModel, llmApiKey);
+        this.activeEventManager = new ActiveEventManager(this);
+        // Inyectando ambos gestores correctamente
+        this.schedulerManager = new EventSchedulerManager(this, llmClient, activeEventManager);
+
+        getCommand("vevent").setExecutor(new CommandManager(this));
+        getServer().getPluginManager().registerEvents(new ArenaListener(this), this);
+
+        getLogger().info("vEvent Drops Plugin activado correctamente.");
+    }
+
+    @Override
+    public void onDisable() {
+        if (activeEventManager != null && activeEventManager.isEventInProgress()) {
+            activeEventManager.endEvent("Apagado del servidor");
+        }
+    }
+
+    public LLMClient getLlmClient() { return llmClient; }
+    public EventSchedulerManager getSchedulerManager() { return schedulerManager; }
+    public ActiveEventManager getActiveEventManager() { return activeEventManager; }
+}
