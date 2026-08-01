@@ -3,7 +3,6 @@ package com.vevent.managers;
 import com.vevent.VEventPlugin;
 import com.vevent.models.LootProfile;
 import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.*;
@@ -27,6 +26,7 @@ public class ActiveEventManager {
     private final List<Block> activeChests = new ArrayList<>();
     private final List<Entity> activeMobs = new ArrayList<>();
     private BukkitTask eventLoopTask;
+    private BukkitTask beamTask;
     private int secondsElapsed = 0;
 
     public ActiveEventManager(VEventPlugin plugin) {
@@ -70,8 +70,15 @@ public class ActiveEventManager {
         this.eventInProgress = true;
         this.secondsElapsed = 0;
         for (Player p : participants) {
-            p.teleport(eventLocation.clone().add(random.nextInt(6) - 3, 2, random.nextInt(6) - 3));
+            double angle = random.nextDouble() * 2 * Math.PI;
+            double dx = Math.cos(angle) * 50;
+            double dz = Math.sin(angle) * 50;
+            Location tpLoc = eventLocation.clone().add(dx, 0, dz);
+            tpLoc.setY(tpLoc.getWorld().getHighestBlockYAt(tpLoc) + 1);
+            p.teleport(tpLoc);
+            p.sendMessage("§eEl epicentro está a 50 bloques. ¡Busca el haz de luz!");
         }
+        startBeam();
         if (activeProfile != null) {
             spawnEventMobs();
             spawnEventChests();
@@ -82,18 +89,28 @@ public class ActiveEventManager {
     }
 
     private Location findSafeLocation(World world) {
-        int radius = 200;
         Location center = world.getSpawnLocation();
-        for (int attempt = 0; attempt < 20; attempt++) {
-            int x = center.getBlockX() + random.nextInt(radius * 2) - radius;
-            int z = center.getBlockZ() + random.nextInt(radius * 2) - radius;
+        for (int attempt = 0; attempt < 50; attempt++) {
+            int x = center.getBlockX() + random.nextInt(3000) - 1500;
+            int z = center.getBlockZ() + random.nextInt(3000) - 1500;
             int y = world.getHighestBlockYAt(x, z);
             Location loc = new Location(world, x + 0.5, y + 1, z + 0.5);
-            if (loc.getBlock().getType() == Material.AIR && loc.clone().subtract(0, 1, 0).getBlock().getType().isSolid()) {
-                return loc;
-            }
+            if (loc.getBlock().getType() != Material.AIR) continue;
+            if (!loc.clone().subtract(0, 1, 0).getBlock().getType().isSolid()) continue;
+            if (isTooCloseToAnyBed(loc)) continue;
+            return loc;
         }
         return center;
+    }
+
+    private boolean isTooCloseToAnyBed(Location loc) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Location bed = player.getBedSpawnLocation();
+            if (bed != null && bed.getWorld() != null && bed.getWorld().equals(loc.getWorld())) {
+                if (loc.distanceSquared(bed) < 1000 * 1000) return true;
+            }
+        }
+        return false;
     }
 
     private void spawnEventMobs() {
@@ -150,7 +167,7 @@ public class ActiveEventManager {
         if (activeProfile.getFarmingItems() != null) {
             for (String itemName : activeProfile.getFarmingItems()) {
                 Material mat = Material.matchMaterial(itemName.toUpperCase());
-                if (mat != null) loot.add(new ItemStack(mat, random.nextInt(64) + 1));
+                if (mat != null) loot.add(new ItemStack(mat, random.nextInt(16) + 1));
             }
         }
         if (activeProfile.getEnchantments() != null) {
@@ -203,11 +220,36 @@ public class ActiveEventManager {
         if (!eventInProgress) return;
         eventInProgress = false;
         if (eventLoopTask != null) eventLoopTask.cancel();
+        stopBeam();
         Bukkit.broadcastMessage("§aEvento concluido: " + reason);
         for (Player player : participants) if (player.isOnline()) giveReturnScroll(player);
         for (Entity mob : activeMobs) if (!mob.isDead()) mob.remove();
         for (Block chest : activeChests) chest.setType(Material.AIR);
         activeMobs.clear(); activeChests.clear(); participants.clear();
+    }
+
+    private void startBeam() {
+        stopBeam();
+        beamTask = new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!eventInProgress || eventLocation == null) { cancel(); return; }
+                World world = eventLocation.getWorld();
+                Location base = eventLocation.clone();
+                base.setY(eventLocation.getBlockY());
+                for (int y = 0; y < 120; y += 3) {
+                    world.spawnParticle(Particle.END_ROD, base.getX(), base.getY() + y, base.getZ(),
+                            1, 0, 0, 0, 0);
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 10L);
+    }
+
+    private void stopBeam() {
+        if (beamTask != null) {
+            beamTask.cancel();
+            beamTask = null;
+        }
     }
 
     private void giveReturnScroll(Player player) {
