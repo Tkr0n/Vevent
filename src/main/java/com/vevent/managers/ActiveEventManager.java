@@ -55,17 +55,38 @@ public class ActiveEventManager {
         this.eventTier = tier;
         this.participants.clear();
         this.isAcceptingPlayers = true;
-        this.eventLocation = findSafeLocation(Bukkit.getWorlds().get(0));
-        
-        int timeout = plugin.getConfig().getInt("event-rules.invite-timeout-seconds", 60);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            isAcceptingPlayers = false;
-            if (participants.isEmpty()) {
-                Bukkit.broadcastMessage("§cNadie aceptó la invitación.");
-                return;
+
+        World world = Bukkit.getWorlds().get(0);
+        Location center = world.getSpawnLocation();
+
+        List<java.util.concurrent.CompletableFuture<Void>> chunkFutures = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (int i = 0; i < 30; i++) {
+            int x = center.getBlockX() + random.nextInt(5000) - 2500;
+            int z = center.getBlockZ() + random.nextInt(5000) - 2500;
+            String key = (x >> 4) + "," + (z >> 4);
+            if (seen.add(key)) {
+                chunkFutures.add(world.getChunkAtAsync(x >> 4, z >> 4).thenAccept(chunk -> {}));
             }
-            startCombatPhase();
-        }, timeout * 20L);
+        }
+
+        java.util.concurrent.CompletableFuture.allOf(chunkFutures.toArray(new java.util.concurrent.CompletableFuture[0]))
+                .thenRun(() -> {
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        this.eventLocation = findSafeLocation(world);
+                        plugin.getLogger().info("[Evento] Ubicación encontrada en " + eventLocation.getBlockX() + ", " + eventLocation.getBlockZ());
+
+                        int timeout = plugin.getConfig().getInt("event-rules.invite-timeout-seconds", 60);
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            isAcceptingPlayers = false;
+                            if (participants.isEmpty()) {
+                                Bukkit.broadcastMessage("§cNadie aceptó la invitación.");
+                                return;
+                            }
+                            startCombatPhase();
+                        }, timeout * 20L);
+                    });
+                });
     }
 
     public boolean acceptPlayer(Player player) {
@@ -126,9 +147,6 @@ public class ActiveEventManager {
             double dx = Math.cos(angle) * 25;
             double dz = Math.sin(angle) * 25;
             Location tpLoc = eventLocation.clone().add(dx, 0, dz);
-            if (!world.isChunkLoaded(tpLoc.getBlockX() >> 4, tpLoc.getBlockZ() >> 4)) {
-                tpLoc = eventLocation.clone().add(random.nextInt(6) - 3, 0, random.nextInt(6) - 3);
-            }
             int groundY = world.getHighestBlockYAt(tpLoc);
             int eventY = eventLocation.getBlockY();
             if (Math.abs(groundY - eventY) > 15) {
@@ -162,10 +180,9 @@ public class ActiveEventManager {
 
     private Location findSafeLocation(World world) {
         Location center = world.getSpawnLocation();
-        for (int attempt = 0; attempt < 60; attempt++) {
-            int x = center.getBlockX() + random.nextInt(3000) - 1500;
-            int z = center.getBlockZ() + random.nextInt(3000) - 1500;
-            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+        for (int attempt = 0; attempt < 150; attempt++) {
+            int x = center.getBlockX() + random.nextInt(5000) - 2500;
+            int z = center.getBlockZ() + random.nextInt(5000) - 2500;
             int y = world.getHighestBlockYAt(x, z);
             Location loc = new Location(world, x + 0.5, y + 1, z + 0.5);
             if (loc.getBlock().getType() != Material.AIR) continue;
@@ -174,25 +191,30 @@ public class ActiveEventManager {
             if (!isFlatEnough(world, x, z)) continue;
             return loc;
         }
+        for (int attempt = 0; attempt < 50; attempt++) {
+            int x = center.getBlockX() + random.nextInt(5000) - 2500;
+            int z = center.getBlockZ() + random.nextInt(5000) - 2500;
+            int y = world.getHighestBlockYAt(x, z);
+            Location loc = new Location(world, x + 0.5, y + 1, z + 0.5);
+            if (loc.getBlock().getType() != Material.AIR) continue;
+            if (!loc.clone().subtract(0, 1, 0).getBlock().getType().isSolid()) continue;
+            if (isTooCloseToAnyBed(loc)) continue;
+            return loc;
+        }
         return center;
     }
 
     private boolean isFlatEnough(World world, int cx, int cz) {
         int minY = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE;
-        int samples = 0;
         for (int dx = -3; dx <= 3; dx++) {
             for (int dz = -3; dz <= 3; dz++) {
-                int sx = cx + dx * 4;
-                int sz = cz + dz * 4;
-                if (!world.isChunkLoaded(sx >> 4, sz >> 4)) continue;
-                int y = world.getHighestBlockYAt(sx, sz);
+                int y = world.getHighestBlockYAt(cx + dx * 4, cz + dz * 4);
                 if (y < minY) minY = y;
                 if (y > maxY) maxY = y;
-                samples++;
             }
         }
-        return samples >= 10 && (maxY - minY) <= 3;
+        return (maxY - minY) <= 3;
     }
 
     private boolean isTooCloseToAnyBed(Location loc) {
@@ -262,7 +284,6 @@ public class ActiveEventManager {
             for (int i = 0; i < count; i++) {
                 int spawnX = eventLocation.getBlockX() + random.nextInt(30) - 15;
                 int spawnZ = eventLocation.getBlockZ() + random.nextInt(30) - 15;
-                if (!world.isChunkLoaded(spawnX >> 4, spawnZ >> 4)) continue;
                 int groundY = world.getHighestBlockYAt(spawnX, spawnZ);
                 Location spawnLoc = new Location(world, spawnX + 0.5, groundY + 1, spawnZ + 0.5);
                 Entity entity = world.spawnEntity(spawnLoc, entityType);
@@ -304,7 +325,6 @@ public class ActiveEventManager {
         for (int i = 0; i < spawnerCount; i++) {
             Location spawnerLoc = eventLocation.clone().add(
                     random.nextInt(24) - 12, -1, random.nextInt(24) - 12);
-            if (!world.isChunkLoaded(spawnerLoc.getBlockX() >> 4, spawnerLoc.getBlockZ() >> 4)) continue;
             spawnerLoc.setY(world.getHighestBlockYAt(spawnerLoc));
             if (spawnerLoc.getBlock().getType() == Material.AIR) {
                 spawnerLoc.getBlock().setType(Material.SPAWNER);
@@ -333,7 +353,6 @@ public class ActiveEventManager {
         for (int i = 0; i < chestCount; i++) {
             Location chestLoc = eventLocation.clone().add(
                     random.nextInt(16) - 8, 0, random.nextInt(16) - 8);
-            if (!world.isChunkLoaded(chestLoc.getBlockX() >> 4, chestLoc.getBlockZ() >> 4)) continue;
             chestLoc.setY(world.getHighestBlockYAt(chestLoc) + 1);
             if (chestLoc.getBlock().getType() != Material.AIR) continue;
             chestLoc.getBlock().setType(Material.CHEST);
