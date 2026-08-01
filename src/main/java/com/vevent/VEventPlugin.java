@@ -24,9 +24,15 @@ public class VEventPlugin extends JavaPlugin {
     public void onEnable() {
         this.saveDefaultConfig();
 
+        getLogger().info("Data folder: " + getDataFolder().getAbsolutePath());
+        getLogger().info("Config file: " + new java.io.File(getDataFolder(), "config.yml").getAbsolutePath());
+
         String llmEndpoint = getConfig().getString("llm-generation.endpoint");
         String llmModel = getConfig().getString("llm-generation.model");
         String llmApiKey = getConfig().getString("llm-generation.api-key");
+
+        getLogger().info("Config leído — model=" + llmModel + ", api-key=" + maskKey(llmApiKey)
+                + ", tiers=" + getConfig().getConfigurationSection("llm-generation.tiers").getKeys(false));
 
         if (llmModel == null || llmModel.isEmpty()) {
             getLogger().warning("llm-generation.model no configurado en config.yml. Las peticiones a la IA fallarán.");
@@ -64,7 +70,7 @@ public class VEventPlugin extends JavaPlugin {
         // P C P
         // E P E
         ShapedRecipe recipe = new ShapedRecipe(recipeKey, result);
-        recipe.shape("EPE", "PCP", "EPE");
+        recipe.shape("CPC", "PEP", "CPC");
         recipe.setIngredient('E', Material.ENDER_PEARL);
         recipe.setIngredient('P', Material.PAPER);
         recipe.setIngredient('C', new RecipeChoice.MaterialChoice(
@@ -88,4 +94,20 @@ public class VEventPlugin extends JavaPlugin {
     public LLMClient getLlmClient() { return llmClient; }
     public EventSchedulerManager getSchedulerManager() { return schedulerManager; }
     public ActiveEventManager getActiveEventManager() { return activeEventManager; }
+
+    public void reloadPluginConfig() {
+        reloadConfig();
+        String model = getConfig().getString("llm-generation.model");
+        String apiKey = getConfig().getString("llm-generation.api-key");
+        getLogger().info("Config recargado — model=" + model + ", api-key=" + maskKey(apiKey));
+        if (llmClient != null) {
+            llmClient.updateConfig(model, apiKey);
+        }
+    }
+
+    private String maskKey(String key) {
+        if (key == null || key.isEmpty()) return "VACIA";
+        if (key.length() <= 8) return key.substring(0, 3) + "***";
+        return key.substring(0, 6) + "..." + key.substring(key.length() - 4);
+    }
 }

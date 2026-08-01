@@ -25,8 +25,8 @@ llm-generation:
   api-key: 'PON_TU_API_KEY_AQUI'
   tiers:
     easy:
-      prompt-rules: "Genera encantamientos nivel 1 y 2. Solo mobs comunes."
+      prompt-rules: "Solo mobs comunes. Botín: comida, hierro, arcos, encantamientos nivel 1-2."
     medium:
-      prompt-rules: "Genera encantamientos nivel 2 y 3. 60% mobs comunes y 40% mobs de nivel medio (ENDERMAN, WITCH, GUARDIAN, PILLAGER, etc)."
+      prompt-rules: "Mobs comunes y de nivel medio. Botín: diamantes, esmeraldas, manzanas de oro, encantamientos nivel 2-3."
     hardcore:
-      prompt-rules: "Genera encantamientos nivel 3 y superiores. Ítems no crafteables. Al menos 25% mobs comunes y el resto mobs de alto nivel (WITHER_SKELETON, BLAZE, PIGLIN_BRUTE, EVOKER, VINDICATOR, RAVAGER, etc)."
+      prompt-rules: "Mobs básicos y de alto nivel. Botín: netherita, totems, élitras, encantamientos nivel 3-5."

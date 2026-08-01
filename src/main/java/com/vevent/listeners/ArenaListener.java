@@ -1,10 +1,12 @@
 package com.vevent.listeners;
 import com.vevent.VEventPlugin;
+import com.vevent.managers.ActiveEventManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -19,11 +21,32 @@ public class ArenaListener implements Listener {
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (event.getBlock().getType() == Material.CHEST) {
-            if (plugin.getActiveEventManager().getActiveChests().contains(event.getBlock())) {
-                event.setCancelled(true);
-                event.getPlayer().sendMessage("§c¡No puedes romper los cofres!");
-            }
+        Block block = event.getBlock();
+        ActiveEventManager mgr = plugin.getActiveEventManager();
+
+        if (mgr.getActiveChests().contains(block)) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage("§c¡No puedes romper los cofres del evento!");
+            return;
+        }
+        if (mgr.getBeaconBlocks().contains(block)) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage("§c¡No puedes romper el beacon del evento!");
+        }
+    }
+
+    @EventHandler
+    public void onChestOpen(PlayerInteractEvent event) {
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        Block block = event.getClickedBlock();
+        if (block == null || block.getType() != Material.CHEST) return;
+
+        ActiveEventManager mgr = plugin.getActiveEventManager();
+        if (!mgr.getActiveChests().contains(block)) return;
+
+        if (!mgr.areAllMobsDead()) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage("§c¡Los cofres están sellados! Derrota a todos los mobs primero.");
         }
     }
 
@@ -37,7 +60,9 @@ public class ArenaListener implements Listener {
         var meta = item.getItemMeta();
         if (meta == null) return;
 
-        var craftedKey = plugin.getActiveEventManager().getCraftedScrollKey();
+        ActiveEventManager mgr = plugin.getActiveEventManager();
+
+        var craftedKey = mgr.getCraftedScrollKey();
         if (meta.getPersistentDataContainer().has(craftedKey, PersistentDataType.BOOLEAN)) {
             Location bedLoc = event.getPlayer().getBedSpawnLocation();
             if (bedLoc == null) {
@@ -50,8 +75,15 @@ public class ArenaListener implements Listener {
             return;
         }
 
-        var scrollKey = plugin.getActiveEventManager().getScrollKey();
+        var scrollKey = mgr.getScrollKey();
         if (!meta.getPersistentDataContainer().has(scrollKey, PersistentDataType.LONG)) return;
+
+        var uuidKey = mgr.getUuidKey();
+        String ownerUuid = meta.getPersistentDataContainer().get(uuidKey, PersistentDataType.STRING);
+        if (ownerUuid == null || !ownerUuid.equals(event.getPlayer().getUniqueId().toString())) {
+            event.getPlayer().sendMessage("§cEste pergamino pertenece a otro jugador.");
+            return;
+        }
 
         Long timestamp = meta.getPersistentDataContainer().get(scrollKey, PersistentDataType.LONG);
         if (timestamp == null) return;
@@ -64,7 +96,7 @@ public class ArenaListener implements Listener {
             return;
         }
 
-        NamespacedKey locationKey = new NamespacedKey(plugin, "vevent_scroll_loc");
+        var locationKey = mgr.getLocationKey();
         String locString = meta.getPersistentDataContainer().get(locationKey, PersistentDataType.STRING);
         if (locString == null) return;
 

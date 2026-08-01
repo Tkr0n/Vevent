@@ -18,8 +18,8 @@ public class LLMClient {
 
     private final VEventPlugin plugin;
     private final HttpClient httpClient;
-    private final String model;
-    private final String apiKey;
+    private String model;
+    private String apiKey;
     private final Gson gson;
 
     public LLMClient(VEventPlugin plugin, String endpoint, String model, String apiKey) {
@@ -47,24 +47,41 @@ public class LLMClient {
         return key.substring(0, 6) + "..." + key.substring(key.length() - 4);
     }
 
+    public void updateConfig(String newModel, String newApiKey) {
+        this.model = newModel;
+        this.apiKey = newApiKey;
+        plugin.getLogger().info("[LLMClient] Config actualizada — modelo='" + model + "', api-key=" + maskKey(apiKey));
+    }
+
     public CompletableFuture<LootProfile> fetchEventDataAsync(String tier, String tierRules) {
         String tierMobRules;
+        String tierLootRules;
         if (tier.equalsIgnoreCase("easy")) {
             tierMobRules = "Genera entre 40 y 60 mobs, solo mobs comunes: ZOMBIE, SKELETON, SPIDER, CREEPER, SLIME, SILVERFISH. ";
+            tierLootRules = "RECOMPENSAS NIVEL EASY: "
+                    + "- rareItems: máximo 2 ítems. SOLO: IRON_SWORD, IRON_CHESTPLATE, BOW, CROSSBOW, FISHING_ROD, SHIELD. NUNCA diamantes, netherita, totems, elytras ni objetos del nether. "
+                    + "- farmingItems: SOLO comida y materiales básicos: APPLE, BAKED_POTATO, CARROT, BREAD, COOKED_BEEF, COOKED_PORKCHOP, ARROW, IRON_INGOT, LEATHER, FEATHER, STRING. Cantidades entre 4 y 16. "
+                    + "- enchantments: máximo 3 encantamientos de nivel 1 o 2. Solo en ítems de hierro o arco. ";
         } else if (tier.equalsIgnoreCase("medium")) {
             tierMobRules = "Genera entre 50 y 70 mobs. 60% mobs comunes (ZOMBIE, SKELETON, SPIDER, CREEPER) y 40% mobs de nivel medio (ENDERMAN, WITCH, GUARDIAN, HUSK, STRAY, DROWNED, PILLAGER, MAGMA_CUBE). ";
+            tierLootRules = "RECOMPENSAS NIVEL MEDIUM: "
+                    + "- rareItems: máximo 3 ítems. SOLO: DIAMOND_SWORD, DIAMOND_CHESTPLATE, DIAMOND_PICKAXE, GOLDEN_APPLE, ENDER_PEARL, ENCHANTED_BOOK, SADDLE, NAME_TAG. NUNCA netherita, totems, elytras. "
+                    + "- farmingItems: DIAMOND, EMERALD, GOLD_INGOT, IRON_INGOT, LAPIS_LAZULI, EXPERIENCE_BOTTLE, BLAZE_ROD. Cantidades entre 2 y 10. "
+                    + "- enchantments: máximo 5 encantamientos de nivel 2 o 3. ";
         } else if (tier.equalsIgnoreCase("hardcore")) {
             tierMobRules = "Genera entre 60 y 80 mobs. INCLUYE SIEMPRE mobs básicos (ZOMBIE, SKELETON, SPIDER, CREEPER) como al menos el 25% del total. "
                     + "El resto: mobs de alto nivel (WITHER_SKELETON, BLAZE, PIGLIN_BRUTE, ENDERMAN, EVOKER, VINDICATOR, RAVAGER, WITCH, GUARDIAN, HOGLIN, ZOMBIFIED_PIGLIN, MAGMA_CUBE). ";
+            tierLootRules = "RECOMPENSAS NIVEL HARDCORE: "
+                    + "- rareItems: máximo 3 ítems. NETHERITE_INGOT, NETHERITE_SWORD, TOTEM_OF_UNDYING, ENCHANTED_GOLDEN_APPLE, ELYTRA (máximo 1), TRIDENT, WITHER_SKELETON_SKULL. "
+                    + "- farmingItems: DIAMOND, ANCIENT_DEBRIS, NETHERITE_SCRAP, BLAZE_ROD, GHAST_TEAR, NETHER_STAR (máximo 1). Cantidades entre 1 y 8. "
+                    + "- enchantments: máximo 6 encantamientos de nivel 3, 4 o 5. ";
         } else {
             tierMobRules = "Genera entre 40 y 60 mobs variados. ";
+            tierLootRules = "RECOMPENSAS: genera botín balanceado según el tier. ";
         }
         String systemPrompt = "Eres un generador de botín para Minecraft. Genera un botín para el tier: " + tier + ". " +
                 "Reglas del tier: " + tierRules + ". " +
-                "RESTRICCIONES ESTRICTAS (nunca las violes): " +
-                "- rareItems: máximo 3 ítems. NUNCA más de 1 ELYTRA. NUNCA más de 3 DIAMOND_BLOCK ni NETHERITE_INGOT. Prefiere ítems como ENCHANTED_GOLDEN_APPLE, TRIDENT, TOTEM_OF_UNDYING. " +
-                "- farmingItems: máximo 5 tipos. Cantidades entre 1 y 16 (nunca stacks de 64). Ítems como DIAMOND, IRON_INGOT, GOLD_INGOT, EMERALD. " +
-                "- enchantments: máximo 5 encantamientos con niveles apropiados al tier. " +
+                tierLootRules +
                 "- CANTIDAD DE MOBS: " + tierMobRules +
                 "Devuelve la respuesta estrictamente con esta estructura JSON: " +
                 "{ \"tier\": \"Nombre del tier\", \"environmentDescription\": \"Clima o ambiente\", " +

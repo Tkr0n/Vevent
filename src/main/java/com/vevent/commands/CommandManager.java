@@ -46,7 +46,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 sender.sendMessage("§cEvento detenido.");
             }
             if (subCommand.equals("reload")) {
-                plugin.reloadConfig();
+                plugin.reloadPluginConfig();
                 sender.sendMessage("§aConfiguración recargada.");
             }
         }

@@ -21,6 +21,8 @@ public class ActiveEventManager {
     private final NamespacedKey mobKey;
     private final NamespacedKey scrollKey;
     private final NamespacedKey craftedScrollKey;
+    private final NamespacedKey uuidKey;
+    private final NamespacedKey locationKey;
     private boolean isAcceptingPlayers = false;
     private boolean eventInProgress = false;
     private Location eventLocation;
@@ -32,6 +34,9 @@ public class ActiveEventManager {
     private final List<Block> activeSpawners = new ArrayList<>();
     private final List<Block> beaconBlocks = new ArrayList<>();
     private final Map<Player, Scoreboard> previousScoreboards = new HashMap<>();
+    private Location oldBorderCenter;
+    private double oldBorderSize;
+    private boolean borderWasSaved;
     private BukkitTask eventLoopTask;
     private int secondsElapsed = 0;
 
@@ -41,6 +46,8 @@ public class ActiveEventManager {
         this.mobKey = new NamespacedKey(plugin, "vevent_mob");
         this.scrollKey = new NamespacedKey(plugin, "vevent_scroll_time");
         this.craftedScrollKey = new NamespacedKey(plugin, "vevent_crafted_scroll");
+        this.uuidKey = new NamespacedKey(plugin, "vevent_scroll_uuid");
+        this.locationKey = new NamespacedKey(plugin, "vevent_scroll_loc");
     }
 
     public void openInvitations(LootProfile profile, String tier) {
@@ -108,8 +115,12 @@ public class ActiveEventManager {
         world.setThundering(false);
 
         preloadChunks(world, eventLocation, 1);
+        setWorldBorder(world);
+
+        assignScoreboards();
         startBeam();
 
+        List<Location> tpLocations = new ArrayList<>();
         for (Player p : participants) {
             double angle = random.nextDouble() * 2 * Math.PI;
             double dx = Math.cos(angle) * 25;
@@ -124,23 +135,31 @@ public class ActiveEventManager {
                 }
             }
             tpLoc.setY(groundY + 1);
-            p.teleport(tpLoc);
-            p.setFallDistance(0);
-            p.sendMessage("§eEl epicentro está a 25 bloques. ¡Busca el haz de luz!");
+            preloadPlayerChunk(world, tpLoc);
+            tpLocations.add(tpLoc);
         }
-        assignScoreboards();
-        if (activeProfile != null) {
-            spawnEventMobs();
-            spawnEventChests();
-        }
-        eventLoopTask = new BukkitRunnable() {
-            @Override public void run() { checkEndConditions(); }
-        }.runTaskTimer(plugin, 20L, 20L);
+
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            for (int i = 0; i < participants.size(); i++) {
+                Player p = participants.get(i);
+                if (!p.isOnline()) continue;
+                p.teleport(tpLocations.get(i));
+                p.setFallDistance(0);
+                p.sendMessage("§eEl epicentro está a 25 bloques. ¡Busca el haz de luz!");
+            }
+            if (activeProfile != null) {
+                spawnEventMobs();
+                spawnEventChests();
+            }
+            eventLoopTask = new BukkitRunnable() {
+                @Override public void run() { checkEndConditions(); }
+            }.runTaskTimer(plugin, 20L, 20L);
+        }, 40L);
     }
 
     private Location findSafeLocation(World world) {
         Location center = world.getSpawnLocation();
-        for (int attempt = 0; attempt < 50; attempt++) {
+        for (int attempt = 0; attempt < 100; attempt++) {
             int x = center.getBlockX() + random.nextInt(3000) - 1500;
             int z = center.getBlockZ() + random.nextInt(3000) - 1500;
             int y = world.getHighestBlockYAt(x, z);
@@ -148,9 +167,23 @@ public class ActiveEventManager {
             if (loc.getBlock().getType() != Material.AIR) continue;
             if (!loc.clone().subtract(0, 1, 0).getBlock().getType().isSolid()) continue;
             if (isTooCloseToAnyBed(loc)) continue;
+            if (!isFlatEnough(world, x, z)) continue;
             return loc;
         }
         return center;
+    }
+
+    private boolean isFlatEnough(World world, int cx, int cz) {
+        int minY = Integer.MAX_VALUE;
+        int maxY = Integer.MIN_VALUE;
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dz = -4; dz <= 4; dz++) {
+                int y = world.getHighestBlockYAt(cx + dx * 5, cz + dz * 5);
+                if (y < minY) minY = y;
+                if (y > maxY) maxY = y;
+            }
+        }
+        return (maxY - minY) <= 3;
     }
 
     private boolean isTooCloseToAnyBed(Location loc) {
@@ -174,6 +207,35 @@ public class ActiveEventManager {
         plugin.getLogger().info("[Evento] Chunks precargados en radio " + radius + " alrededor del epicentro.");
     }
 
+    private void preloadPlayerChunk(World world, Location loc) {
+        world.getChunkAt(loc.getBlockX() >> 4, loc.getBlockZ() >> 4);
+    }
+
+    private void setWorldBorder(World world) {
+        WorldBorder border = world.getWorldBorder();
+        oldBorderCenter = border.getCenter();
+        oldBorderSize = border.getSize();
+        borderWasSaved = true;
+        border.setCenter(eventLocation);
+        border.setSize(200);
+        border.setDamageAmount(2.0);
+        border.setDamageBuffer(2.0);
+        border.setWarningDistance(10);
+        border.setWarningTime(5);
+    }
+
+    private void restoreWorldBorder() {
+        if (!borderWasSaved) return;
+        WorldBorder border = eventLocation.getWorld().getWorldBorder();
+        border.setCenter(oldBorderCenter);
+        border.setSize(oldBorderSize);
+        border.setDamageAmount(0.2);
+        border.setDamageBuffer(5.0);
+        border.setWarningDistance(5);
+        border.setWarningTime(15);
+        borderWasSaved = false;
+    }
+
     private void spawnEventMobs() {
         if (activeProfile == null || activeProfile.getMobs() == null) return;
         World world = eventLocation.getWorld();
@@ -195,6 +257,8 @@ public class ActiveEventManager {
                 Location spawnLoc = new Location(world, spawnX + 0.5, groundY + 1, spawnZ + 0.5);
                 Entity entity = world.spawnEntity(spawnLoc, entityType);
                 entity.getPersistentDataContainer().set(mobKey, PersistentDataType.BYTE, (byte) 1);
+                entity.setCustomName("§c" + formatMobName(mobTypeName) + " de evento");
+                entity.setCustomNameVisible(true);
                 activeMobs.add(entity);
             }
         }
@@ -208,6 +272,16 @@ public class ActiveEventManager {
         if (n == 3) return 1.20;
         if (n == 4) return 1.40;
         return 1.60;
+    }
+
+    private String formatMobName(String typeName) {
+        String lower = typeName.toLowerCase().replace("_", " ");
+        String[] words = lower.split(" ");
+        StringBuilder sb = new StringBuilder();
+        for (String w : words) {
+            if (w.length() > 0) sb.append(Character.toUpperCase(w.charAt(0))).append(w.substring(1)).append(" ");
+        }
+        return sb.toString().trim();
     }
 
     private void spawnSpawners() {
@@ -244,7 +318,7 @@ public class ActiveEventManager {
     private void spawnEventChests() {
         if (activeProfile == null) return;
         World world = eventLocation.getWorld();
-        int chestCount = Math.min(participants.size() * 2, 10);
+        int chestCount = Math.min(participants.size() * 2, 15);
         for (int i = 0; i < chestCount; i++) {
             Location chestLoc = eventLocation.clone().add(
                     random.nextInt(16) - 8, 0, random.nextInt(16) - 8);
@@ -325,8 +399,8 @@ public class ActiveEventManager {
             return;
         }
 
-        if (secondsElapsed > 30 && activeChests.isEmpty() && activeMobs.isEmpty()) {
-            endEvent("Todos los objetivos completados");
+        if (secondsElapsed > 30 && activeMobs.isEmpty()) {
+            endEvent("Todos los mobs derrotados");
         }
     }
 
@@ -336,6 +410,7 @@ public class ActiveEventManager {
         if (eventLoopTask != null) eventLoopTask.cancel();
         stopBeam();
         restoreScoreboards();
+        restoreWorldBorder();
         eventLocation.getWorld().setTime(0);
         Bukkit.broadcastMessage("§aEvento concluido: " + reason);
         for (Player player : participants) if (player.isOnline()) giveReturnScroll(player);
@@ -429,13 +504,14 @@ public class ActiveEventManager {
         ItemMeta meta = scroll.getItemMeta();
         meta.setDisplayName("§6§lPergamino de Retorno");
         meta.setLore(List.of(
+                "§7Propietario: §f" + player.getName(),
                 "§7Click derecho para volver a tu cama",
                 "§7Expira en 5 minutos"
         ));
-        NamespacedKey locationKey = new NamespacedKey(plugin, "vevent_scroll_loc");
         String locString = bedLoc.getWorld().getName() + ";" + bedLoc.getBlockX() + ";" + bedLoc.getBlockY() + ";" + bedLoc.getBlockZ();
         meta.getPersistentDataContainer().set(scrollKey, PersistentDataType.LONG, System.currentTimeMillis());
         meta.getPersistentDataContainer().set(locationKey, PersistentDataType.STRING, locString);
+        meta.getPersistentDataContainer().set(uuidKey, PersistentDataType.STRING, player.getUniqueId().toString());
         scroll.setItemMeta(meta);
 
         if (player.getInventory().firstEmpty() == -1) {
@@ -448,8 +524,12 @@ public class ActiveEventManager {
     
     public boolean isEventInProgress() { return eventInProgress; }
     public List<Block> getActiveChests() { return activeChests; }
+    public List<Block> getBeaconBlocks() { return beaconBlocks; }
+    public boolean areAllMobsDead() { return activeMobs.isEmpty(); }
     public NamespacedKey getScrollKey() { return scrollKey; }
     public NamespacedKey getCraftedScrollKey() { return craftedScrollKey; }
+    public NamespacedKey getUuidKey() { return uuidKey; }
+    public NamespacedKey getLocationKey() { return locationKey; }
 
     public void cancelInvitation() {
         if (!isAcceptingPlayers) return;
