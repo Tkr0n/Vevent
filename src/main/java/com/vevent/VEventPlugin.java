@@ -31,7 +31,9 @@ public class VEventPlugin extends JavaPlugin {
         this.activeEventManager = new ActiveEventManager(this);
         this.schedulerManager = new EventSchedulerManager(this, llmClient, activeEventManager);
 
-        getCommand("vevent").setExecutor(new CommandManager(this));
+        CommandManager cmdManager = new CommandManager(this);
+        getCommand("vevent").setExecutor(cmdManager);
+        getCommand("vevent").setTabCompleter(cmdManager);
         getServer().getPluginManager().registerEvents(new ArenaListener(this), this);
 
         getLogger().info("vEvent Drops Plugin activado correctamente.");

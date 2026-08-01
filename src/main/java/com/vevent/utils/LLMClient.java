@@ -48,17 +48,28 @@ public class LLMClient {
     }
 
     public CompletableFuture<LootProfile> fetchEventDataAsync(String tier, String tierRules) {
+        String tierMobRules;
+        if (tier.equalsIgnoreCase("easy")) {
+            tierMobRules = "Genera entre 40 y 60 mobs, solo mobs comunes: ZOMBIE, SKELETON, SPIDER, CREEPER, SLIME, SILVERFISH. ";
+        } else if (tier.equalsIgnoreCase("medium")) {
+            tierMobRules = "Genera entre 50 y 70 mobs. 60% mobs comunes (ZOMBIE, SKELETON, SPIDER, CREEPER) y 40% mobs de nivel medio (ENDERMAN, WITCH, GUARDIAN, HUSK, STRAY, DROWNED, PILLAGER, MAGMA_CUBE). ";
+        } else if (tier.equalsIgnoreCase("hardcore")) {
+            tierMobRules = "Genera entre 60 y 80 mobs. INCLUYE SIEMPRE mobs básicos (ZOMBIE, SKELETON, SPIDER, CREEPER) como al menos el 25% del total. "
+                    + "El resto: mobs de alto nivel (WITHER_SKELETON, BLAZE, PIGLIN_BRUTE, ENDERMAN, EVOKER, VINDICATOR, RAVAGER, WITCH, GUARDIAN, HOGLIN, ZOMBIFIED_PIGLIN, MAGMA_CUBE). ";
+        } else {
+            tierMobRules = "Genera entre 40 y 60 mobs variados. ";
+        }
         String systemPrompt = "Eres un generador de botín para Minecraft. Genera un botín para el tier: " + tier + ". " +
                 "Reglas del tier: " + tierRules + ". " +
                 "RESTRICCIONES ESTRICTAS (nunca las violes): " +
                 "- rareItems: máximo 3 ítems. NUNCA más de 1 ELYTRA. NUNCA más de 3 DIAMOND_BLOCK ni NETHERITE_INGOT. Prefiere ítems como ENCHANTED_GOLDEN_APPLE, TRIDENT, TOTEM_OF_UNDYING. " +
                 "- farmingItems: máximo 5 tipos. Cantidades entre 1 y 16 (nunca stacks de 64). Ítems como DIAMOND, IRON_INGOT, GOLD_INGOT, EMERALD. " +
                 "- enchantments: máximo 5 encantamientos con niveles apropiados al tier. " +
-                "- mobs: máximo 30 mobs totales. Variados según el tier. " +
+                "- CANTIDAD DE MOBS: " + tierMobRules +
                 "Devuelve la respuesta estrictamente con esta estructura JSON: " +
                 "{ \"tier\": \"Nombre del tier\", \"environmentDescription\": \"Clima o ambiente\", " +
                 "\"enchantments\": [\"SHARPNESS-3\"], \"rareItems\": [\"TRIDENT\"], " +
-                "\"farmingItems\": [\"DIAMOND\"], \"mobs\": {\"ZOMBIE\": 10, \"SKELETON\": 5} }";
+                "\"farmingItems\": [\"DIAMOND\"], \"mobs\": {\"ZOMBIE\": 15, \"SKELETON\": 10} }";
 
         JsonObject requestBody = new JsonObject();
         JsonArray contents = new JsonArray();

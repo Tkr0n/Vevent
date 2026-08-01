@@ -5,6 +5,7 @@ import com.vevent.models.LootProfile;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
+import org.bukkit.block.CreatureSpawner;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -22,9 +23,11 @@ public class ActiveEventManager {
     private boolean eventInProgress = false;
     private Location eventLocation;
     private LootProfile activeProfile;
+    private String eventTier;
     private final List<Player> participants = new ArrayList<>();
     private final List<Block> activeChests = new ArrayList<>();
     private final List<Entity> activeMobs = new ArrayList<>();
+    private final List<Block> activeSpawners = new ArrayList<>();
     private BukkitTask eventLoopTask;
     private BukkitTask beamTask;
     private int secondsElapsed = 0;
@@ -36,8 +39,9 @@ public class ActiveEventManager {
         this.scrollKey = new NamespacedKey(plugin, "vevent_scroll_time");
     }
 
-    public void openInvitations(LootProfile profile) {
+    public void openInvitations(LootProfile profile, String tier) {
         this.activeProfile = profile;
+        this.eventTier = tier;
         this.participants.clear();
         this.isAcceptingPlayers = true;
         this.eventLocation = findSafeLocation(Bukkit.getWorlds().get(0));
@@ -54,27 +58,56 @@ public class ActiveEventManager {
     }
 
     public boolean acceptPlayer(Player player) {
-        if (!isAcceptingPlayers) return false;
+        if (!isAcceptingPlayers) {
+            player.sendMessage("§cNo hay inscripciones abiertas en este momento.");
+            return false;
+        }
         if (player.getBedSpawnLocation() == null) {
             player.sendMessage("§cDebes dormir en una cama primero.");
             return false;
         }
         if (!participants.contains(player)) {
             participants.add(player);
-            player.sendMessage("§a¡Registrado para el evento!");
+            player.sendMessage("§a¡Registrado para el evento " + getTierDisplay() + "§a!");
         }
         return true;
+    }
+
+    public void rejectPlayer(Player player) {
+        if (!isAcceptingPlayers) {
+            player.sendMessage("§cNo hay inscripciones abiertas en este momento.");
+            return;
+        }
+        if (participants.remove(player)) {
+            player.sendMessage("§cTe has desinscrito del evento. Puedes volver con /vevent accept.");
+        } else {
+            player.sendMessage("§cNo estás inscrito en ningún evento.");
+        }
+    }
+
+    private String getTierDisplay() {
+        if (eventTier == null) return "";
+        switch (eventTier) {
+            case "easy": return "§a[Fácil]";
+            case "medium": return "§e[Medio]";
+            case "hardcore": return "§c[Hardcore]";
+            default: return "[" + eventTier + "]";
+        }
     }
 
     private void startCombatPhase() {
         this.eventInProgress = true;
         this.secondsElapsed = 0;
+        World world = eventLocation.getWorld();
+        world.setTime(13000);
+        world.setStorm(false);
+        world.setThundering(false);
         for (Player p : participants) {
             double angle = random.nextDouble() * 2 * Math.PI;
             double dx = Math.cos(angle) * 50;
             double dz = Math.sin(angle) * 50;
             Location tpLoc = eventLocation.clone().add(dx, 0, dz);
-            tpLoc.setY(tpLoc.getWorld().getHighestBlockYAt(tpLoc) + 1);
+            tpLoc.setY(world.getHighestBlockYAt(tpLoc) + 1);
             p.teleport(tpLoc);
             p.sendMessage("§eEl epicentro está a 50 bloques. ¡Busca el haz de luz!");
         }
@@ -116,9 +149,10 @@ public class ActiveEventManager {
     private void spawnEventMobs() {
         if (activeProfile == null || activeProfile.getMobs() == null) return;
         World world = eventLocation.getWorld();
+        double scaleFactor = getMobScaleFactor();
         for (Map.Entry<String, Integer> entry : activeProfile.getMobs().entrySet()) {
             String mobTypeName = entry.getKey().toUpperCase();
-            int count = Math.min(entry.getValue(), 50);
+            int count = (int) Math.round(entry.getValue() * scaleFactor);
             EntityType entityType;
             try {
                 entityType = EntityType.valueOf(mobTypeName);
@@ -128,13 +162,53 @@ public class ActiveEventManager {
             }
             for (int i = 0; i < count; i++) {
                 Location spawnLoc = eventLocation.clone().add(
-                        random.nextInt(20) - 10, 1, random.nextInt(20) - 10);
+                        random.nextInt(30) - 15, 1, random.nextInt(30) - 15);
                 Entity entity = world.spawnEntity(spawnLoc, entityType);
                 entity.getPersistentDataContainer().set(mobKey, PersistentDataType.BYTE, (byte) 1);
                 activeMobs.add(entity);
             }
         }
+        spawnSpawners();
         Bukkit.broadcastMessage("§c¡" + activeMobs.size() + " criaturas han aparecido!");
+    }
+
+    private double getMobScaleFactor() {
+        int n = participants.size();
+        if (n <= 2) return 1.0;
+        if (n == 3) return 1.20;
+        if (n == 4) return 1.40;
+        return 1.60;
+    }
+
+    private void spawnSpawners() {
+        if (activeProfile == null || activeProfile.getMobs() == null) return;
+        World world = eventLocation.getWorld();
+        List<String> mobTypes = new ArrayList<>(activeProfile.getMobs().keySet());
+        if (mobTypes.isEmpty()) return;
+
+        int spawnerCount = Math.min(mobTypes.size() * 2, 8);
+        for (int i = 0; i < spawnerCount; i++) {
+            Location spawnerLoc = eventLocation.clone().add(
+                    random.nextInt(24) - 12, -1, random.nextInt(24) - 12);
+            spawnerLoc.setY(world.getHighestBlockYAt(spawnerLoc));
+            if (spawnerLoc.getBlock().getType() == Material.AIR) {
+                spawnerLoc.getBlock().setType(Material.SPAWNER);
+                activeSpawners.add(spawnerLoc.getBlock());
+                if (spawnerLoc.getBlock().getState() instanceof CreatureSpawner spawner) {
+                    String mobTypeName = mobTypes.get(random.nextInt(mobTypes.size())).toUpperCase();
+                    try {
+                        spawner.setSpawnedType(EntityType.valueOf(mobTypeName));
+                        spawner.setDelay(200);
+                        spawner.setMaxNearbyEntities(6);
+                        spawner.setSpawnRange(4);
+                        spawner.update();
+                    } catch (IllegalArgumentException e) {
+                        plugin.getLogger().warning("[Evento] Tipo de spawner inválido: " + mobTypeName);
+                    }
+                }
+            }
+        }
+        Bukkit.broadcastMessage("§5¡" + spawnerCount + " spawners han aparecido!");
     }
 
     private void spawnEventChests() {
@@ -204,14 +278,23 @@ public class ActiveEventManager {
     private void checkEndConditions() {
         secondsElapsed++;
         int maxMinutes = plugin.getConfig().getInt("event-rules.duration-minutes", 15);
+        int maxSeconds = maxMinutes * 60;
         activeMobs.removeIf(Entity::isDead);
 
-        boolean timedOut = secondsElapsed >= (maxMinutes * 60);
-        boolean objectivesComplete = secondsElapsed > 5 && (activeChests.isEmpty() && activeMobs.isEmpty());
+        int secondsLeft = maxSeconds - secondsElapsed;
 
-        if (timedOut) {
+        if (secondsLeft == 300) {
+            Bukkit.broadcastMessage("§eQuedan 5 minutos de evento " + getTierDisplay() + "§e.");
+        } else if (secondsLeft == 60) {
+            Bukkit.broadcastMessage("§c¡Último minuto del evento " + getTierDisplay() + "§c!");
+        } else if (secondsLeft <= 10 && secondsLeft > 0) {
+            Bukkit.broadcastMessage("§c§l" + secondsLeft + " segundos restantes!");
+        } else if (secondsLeft <= 0) {
             endEvent("Tiempo agotado");
-        } else if (objectivesComplete) {
+            return;
+        }
+
+        if (secondsElapsed > 30 && activeChests.isEmpty() && activeMobs.isEmpty()) {
             endEvent("Todos los objetivos completados");
         }
     }
@@ -221,11 +304,13 @@ public class ActiveEventManager {
         eventInProgress = false;
         if (eventLoopTask != null) eventLoopTask.cancel();
         stopBeam();
+        eventLocation.getWorld().setTime(0);
         Bukkit.broadcastMessage("§aEvento concluido: " + reason);
         for (Player player : participants) if (player.isOnline()) giveReturnScroll(player);
         for (Entity mob : activeMobs) if (!mob.isDead()) mob.remove();
         for (Block chest : activeChests) chest.setType(Material.AIR);
-        activeMobs.clear(); activeChests.clear(); participants.clear();
+        for (Block spawner : activeSpawners) spawner.setType(Material.AIR);
+        activeMobs.clear(); activeChests.clear(); activeSpawners.clear(); participants.clear();
     }
 
     private void startBeam() {
@@ -280,4 +365,13 @@ public class ActiveEventManager {
     public boolean isEventInProgress() { return eventInProgress; }
     public List<Block> getActiveChests() { return activeChests; }
     public NamespacedKey getScrollKey() { return scrollKey; }
+
+    public void cancelInvitation() {
+        if (!isAcceptingPlayers) return;
+        isAcceptingPlayers = false;
+        participants.clear();
+        activeProfile = null;
+        eventLocation = null;
+        Bukkit.broadcastMessage("§cEl evento fue cancelado por un administrador.");
+    }
 }

@@ -24,7 +24,9 @@ llm-generation:
   model: 'gemini-1.5-flash'
   api-key: 'PON_TU_API_KEY_AQUI'
   tiers:
-    basic:
-      prompt-rules: "Genera encantamientos nivel 1 y 2. Máximo 15 mobs comunes."
-    titan:
-      prompt-rules: "Genera encantamientos nivel 3 y superiores. Ítems no crafteables. Máximo 30 mobs variados."
+    easy:
+      prompt-rules: "Genera encantamientos nivel 1 y 2. Solo mobs comunes."
+    medium:
+      prompt-rules: "Genera encantamientos nivel 2 y 3. 60% mobs comunes y 40% mobs de nivel medio (ENDERMAN, WITCH, GUARDIAN, PILLAGER, etc)."
+    hardcore:
+      prompt-rules: "Genera encantamientos nivel 3 y superiores. Ítems no crafteables. Al menos 25% mobs comunes y el resto mobs de alto nivel (WITHER_SKELETON, BLAZE, PIGLIN_BRUTE, EVOKER, VINDICATOR, RAVAGER, etc)."
