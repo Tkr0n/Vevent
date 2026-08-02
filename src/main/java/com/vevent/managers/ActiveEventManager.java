@@ -34,10 +34,8 @@ public class ActiveEventManager {
     private final List<Entity> activeMobs = new ArrayList<>();
     private final List<Block> activeSpawners = new ArrayList<>();
     private final List<Block> beaconBlocks = new ArrayList<>();
+    private final List<Block> activeBarriers = new ArrayList<>();
     private final Map<Player, Scoreboard> previousScoreboards = new HashMap<>();
-    private Location oldBorderCenter;
-    private double oldBorderSize;
-    private boolean borderWasSaved;
     private BukkitTask eventLoopTask;
     private int secondsElapsed = 0;
 
@@ -60,38 +58,17 @@ public class ActiveEventManager {
         this.eventTier = tier;
         this.participants.clear();
         this.isAcceptingPlayers = true;
+        this.eventLocation = findSafeLocation(Bukkit.getWorlds().get(0));
 
-        World world = Bukkit.getWorlds().get(0);
-        Location center = world.getSpawnLocation();
-
-        List<java.util.concurrent.CompletableFuture<Void>> chunkFutures = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
-        for (int i = 0; i < 30; i++) {
-            int x = center.getBlockX() + random.nextInt(5000) - 2500;
-            int z = center.getBlockZ() + random.nextInt(5000) - 2500;
-            String key = (x >> 4) + "," + (z >> 4);
-            if (seen.add(key)) {
-                chunkFutures.add(world.getChunkAtAsync(x >> 4, z >> 4).thenAccept(chunk -> {}));
+        int timeout = plugin.getConfig().getInt("event-rules.invite-timeout-seconds", 60);
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            isAcceptingPlayers = false;
+            if (participants.isEmpty()) {
+                Bukkit.broadcastMessage("§cNadie aceptó la invitación.");
+                return;
             }
-        }
-
-        java.util.concurrent.CompletableFuture.allOf(chunkFutures.toArray(new java.util.concurrent.CompletableFuture[0]))
-                .thenRun(() -> {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        this.eventLocation = findSafeLocation(world);
-                        plugin.getLogger().info("[Evento] Ubicación encontrada en " + eventLocation.getBlockX() + ", " + eventLocation.getBlockZ());
-
-                        int timeout = plugin.getConfig().getInt("event-rules.invite-timeout-seconds", 60);
-                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                            isAcceptingPlayers = false;
-                            if (participants.isEmpty()) {
-                                Bukkit.broadcastMessage("§cNadie aceptó la invitación.");
-                                return;
-                            }
-                            startCombatPhase();
-                        }, timeout * 20L);
-                    });
-                });
+            startCombatPhase();
+        }, timeout * 20L);
     }
 
     public boolean acceptPlayer(Player player) {
@@ -140,28 +117,29 @@ public class ActiveEventManager {
         world.setStorm(false);
         world.setThundering(false);
 
-        preloadChunks(world, eventLocation, 1);
-        setWorldBorder(world);
-
+        int cx = eventLocation.getBlockX() >> 4;
+        int cz = eventLocation.getBlockZ() >> 4;
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                world.getChunkAt(cx + dx, cz + dz);
+            }
+        }
         assignScoreboards();
         startBeam();
+        placeBarriers(world);
 
-        List<Location> tpLocations = new ArrayList<>();
-        for (Player p : participants) {
-            double angle = random.nextDouble() * 2 * Math.PI;
-            double dx = Math.cos(angle) * 25;
-            double dz = Math.sin(angle) * 25;
-            Location tpLoc = eventLocation.clone().add(dx, 0, dz);
-            tpLoc.setY(findSafeY(world, tpLoc.getBlockX(), tpLoc.getBlockZ(), eventLocation.getBlockY()));
-            preloadPlayerChunk(world, tpLoc);
-            tpLocations.add(tpLoc);
-        }
-
+        plugin.getLogger().info("[Evento] Esperando generación de chunks...");
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            for (int i = 0; i < participants.size(); i++) {
-                Player p = participants.get(i);
+            List<Location> tpLocations = new ArrayList<>();
+            for (Player p : participants) {
                 if (!p.isOnline()) continue;
-                p.teleport(tpLocations.get(i));
+                double angle = random.nextDouble() * 2 * Math.PI;
+                double dx = Math.cos(angle) * 25;
+                double dz = Math.sin(angle) * 25;
+                Location tpLoc = eventLocation.clone().add(dx, 0, dz);
+                tpLoc.setY(findSafeY(world, tpLoc.getBlockX(), tpLoc.getBlockZ(), eventLocation.getBlockY()));
+                tpLocations.add(tpLoc);
+                p.teleport(tpLoc);
                 p.setFallDistance(0);
                 p.sendMessage("§eEl epicentro está a 25 bloques. ¡Busca el haz de luz!");
             }
@@ -172,30 +150,37 @@ public class ActiveEventManager {
             eventLoopTask = new BukkitRunnable() {
                 @Override public void run() { checkEndConditions(); }
             }.runTaskTimer(plugin, 20L, 20L);
-        }, 40L);
+        }, 100L);
     }
 
     private Location findSafeLocation(World world) {
         Location center = world.getSpawnLocation();
-        for (int attempt = 0; attempt < 150; attempt++) {
-            int x = center.getBlockX() + random.nextInt(5000) - 2500;
-            int z = center.getBlockZ() + random.nextInt(5000) - 2500;
+        for (int attempt = 0; attempt < 100; attempt++) {
+            int x = center.getBlockX() + random.nextInt(3000) - 1500;
+            int z = center.getBlockZ() + random.nextInt(3000) - 1500;
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
             int y = world.getHighestBlockYAt(x, z);
             Location loc = new Location(world, x + 0.5, y + 1, z + 0.5);
             if (loc.getBlock().getType() != Material.AIR) continue;
-            if (!loc.clone().subtract(0, 1, 0).getBlock().getType().isSolid()) continue;
+            Material below = loc.clone().subtract(0, 1, 0).getBlock().getType();
+            if (!below.isSolid() || below == Material.WATER || below == Material.LAVA) continue;
             if (isTooCloseToAnyBed(loc)) continue;
             if (!isFlatEnough(world, x, z)) continue;
             return loc;
         }
-        for (int attempt = 0; attempt < 50; attempt++) {
-            int x = center.getBlockX() + random.nextInt(5000) - 2500;
-            int z = center.getBlockZ() + random.nextInt(5000) - 2500;
+        for (int attempt = 0; attempt < 30; attempt++) {
+            int angle = random.nextInt(360);
+            int dist = 1200 + random.nextInt(800);
+            int x = center.getBlockX() + (int)(Math.cos(Math.toRadians(angle)) * dist);
+            int z = center.getBlockZ() + (int)(Math.sin(Math.toRadians(angle)) * dist);
+            Location testLoc = new Location(world, x, 64, z);
+            if (isTooCloseToAnyBed(testLoc)) continue;
+            world.getChunkAt(x >> 4, z >> 4);
             int y = world.getHighestBlockYAt(x, z);
             Location loc = new Location(world, x + 0.5, y + 1, z + 0.5);
             if (loc.getBlock().getType() != Material.AIR) continue;
-            if (!loc.clone().subtract(0, 1, 0).getBlock().getType().isSolid()) continue;
-            if (isTooCloseToAnyBed(loc)) continue;
+            Material b = loc.clone().subtract(0, 1, 0).getBlock().getType();
+            if (!b.isSolid() || b == Material.WATER || b == Material.LAVA) continue;
             return loc;
         }
         return center;
@@ -204,14 +189,19 @@ public class ActiveEventManager {
     private boolean isFlatEnough(World world, int cx, int cz) {
         int minY = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE;
-        for (int dx = -3; dx <= 3; dx++) {
-            for (int dz = -3; dz <= 3; dz++) {
-                int y = world.getHighestBlockYAt(cx + dx * 4, cz + dz * 4);
+        int samples = 0;
+        for (int dx = -4; dx <= 4; dx++) {
+            for (int dz = -4; dz <= 4; dz++) {
+                int sx = cx + dx * 5;
+                int sz = cz + dz * 5;
+                if (!world.isChunkLoaded(sx >> 4, sz >> 4)) continue;
+                int y = world.getHighestBlockYAt(sx, sz);
                 if (y < minY) minY = y;
                 if (y > maxY) maxY = y;
+                samples++;
             }
         }
-        return (maxY - minY) <= 3;
+        return samples >= 10 && (maxY - minY) <= 3;
     }
 
     private boolean isTooCloseToAnyBed(Location loc) {
@@ -252,7 +242,11 @@ public class ActiveEventManager {
                 groundY--;
             }
         }
-        return groundY + 1;
+        int safeY = groundY + 1;
+        while (safeY < world.getMaxHeight() - 1 && !world.getBlockAt(bx, safeY, bz).getType().isAir()) {
+            safeY++;
+        }
+        return safeY;
     }
 
     private boolean isUnsafeBlock(Material mat) {
@@ -263,31 +257,6 @@ public class ActiveEventManager {
                 || mat == Material.POWDER_SNOW || mat == Material.COBWEB
                 || mat == Material.BAMBOO || mat == Material.SUGAR_CANE
                 || mat == Material.TALL_GRASS || mat.name().contains("SAPLING");
-    }
-
-    private void setWorldBorder(World world) {
-        WorldBorder border = world.getWorldBorder();
-        oldBorderCenter = border.getCenter();
-        oldBorderSize = border.getSize();
-        borderWasSaved = true;
-        border.setCenter(eventLocation);
-        border.setSize(200);
-        border.setDamageAmount(2.0);
-        border.setDamageBuffer(2.0);
-        border.setWarningDistance(10);
-        border.setWarningTime(5);
-    }
-
-    private void restoreWorldBorder() {
-        if (!borderWasSaved) return;
-        WorldBorder border = eventLocation.getWorld().getWorldBorder();
-        border.setCenter(oldBorderCenter);
-        border.setSize(oldBorderSize);
-        border.setDamageAmount(0.2);
-        border.setDamageBuffer(5.0);
-        border.setWarningDistance(5);
-        border.setWarningTime(15);
-        borderWasSaved = false;
     }
 
     private void spawnEventMobs() {
@@ -464,14 +433,14 @@ public class ActiveEventManager {
         if (eventLoopTask != null) eventLoopTask.cancel();
         stopBeam();
         restoreScoreboards();
-        restoreWorldBorder();
         eventLocation.getWorld().setTime(0);
         Bukkit.broadcastMessage("§aEvento concluido: " + reason);
         for (Player player : participants) if (player.isOnline()) giveReturnScroll(player);
         for (Entity mob : activeMobs) if (!mob.isDead()) mob.remove();
         for (Block chest : activeChests) chest.setType(Material.AIR);
         for (Block spawner : activeSpawners) spawner.setType(Material.AIR);
-        activeMobs.clear(); activeChests.clear(); activeSpawners.clear(); beaconBlocks.clear(); participants.clear();
+        for (Block barrier : activeBarriers) barrier.setType(Material.AIR);
+        activeMobs.clear(); activeChests.clear(); activeSpawners.clear(); beaconBlocks.clear(); activeBarriers.clear(); participants.clear();
     }
 
     private void assignScoreboards() {
@@ -518,6 +487,27 @@ public class ActiveEventManager {
             }
         }
         previousScoreboards.clear();
+    }
+
+    private void placeBarriers(World world) {
+        int cx = eventLocation.getBlockX();
+        int cz = eventLocation.getBlockZ();
+        int baseY = eventLocation.getBlockY() - 1;
+        int radius = 100;
+        for (int angle = 0; angle < 360; angle += 8) {
+            double rad = Math.toRadians(angle);
+            int x = cx + (int) Math.round(Math.cos(rad) * radius);
+            int z = cz + (int) Math.round(Math.sin(rad) * radius);
+            int y = world.getHighestBlockYAt(x, z);
+            if (Math.abs(y - baseY) > 10) y = baseY;
+            for (int dy = 0; dy < 4; dy++) {
+                Location loc = new Location(world, x, y + dy, z);
+                if (loc.getBlock().getType() == Material.AIR || loc.getBlock().getType() == Material.BARRIER) {
+                    loc.getBlock().setType(Material.BARRIER);
+                    activeBarriers.add(loc.getBlock());
+                }
+            }
+        }
     }
 
     private void startBeam() {
