@@ -7,17 +7,24 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 
 public class ArenaListener implements Listener {
     private final VEventPlugin plugin;
     public ArenaListener(VEventPlugin plugin) { this.plugin = plugin; }
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        event.getPlayer().discoverRecipe(new NamespacedKey(plugin, "return_scroll_craft"));
+    }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
@@ -64,6 +71,7 @@ public class ArenaListener implements Listener {
 
         var craftedKey = mgr.getCraftedScrollKey();
         if (meta.getPersistentDataContainer().has(craftedKey, PersistentDataType.BOOLEAN)) {
+            event.setCancelled(true);
             Location bedLoc = event.getPlayer().getBedSpawnLocation();
             if (bedLoc == null) {
                 event.getPlayer().sendMessage("§cNo tienes una cama asignada. Duerme en una primero.");
@@ -71,7 +79,7 @@ public class ArenaListener implements Listener {
             }
             event.getPlayer().teleport(bedLoc);
             event.getPlayer().sendMessage("§a¡Has vuelto a tu cama!");
-            item.setAmount(item.getAmount() - 1);
+            consumeOneItem(event.getPlayer(), item);
             return;
         }
 
@@ -92,7 +100,7 @@ public class ArenaListener implements Listener {
         long expirationTime = timestamp + (expirationMinutes * 60 * 1000L);
         if (System.currentTimeMillis() > expirationTime) {
             event.getPlayer().sendMessage("§cEl pergamino ha expirado.");
-            item.setAmount(item.getAmount() - 1);
+            consumeOneItem(event.getPlayer(), item);
             return;
         }
 
@@ -113,7 +121,19 @@ public class ArenaListener implements Listener {
             Location bedLoc = new Location(world, x + 0.5, y + 0.5, z + 0.5);
             event.getPlayer().teleport(bedLoc);
             event.getPlayer().sendMessage("§a¡Has vuelto a tu cama!");
-            item.setAmount(item.getAmount() - 1);
+            consumeOneItem(event.getPlayer(), item);
         } catch (NumberFormatException ignored) {}
+    }
+
+    private void consumeOneItem(org.bukkit.entity.Player player, ItemStack item) {
+        int newAmount = item.getAmount() - 1;
+        item.setAmount(0);
+        if (newAmount > 0) {
+            ItemStack remainder = item.clone();
+            remainder.setAmount(newAmount);
+            player.getInventory().setItemInMainHand(remainder);
+        } else {
+            player.getInventory().setItemInMainHand(null);
+        }
     }
 }

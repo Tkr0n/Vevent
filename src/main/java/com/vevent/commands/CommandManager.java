@@ -1,10 +1,16 @@
 package com.vevent.commands;
 import com.vevent.VEventPlugin;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,12 +52,28 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 sender.sendMessage("§cEvento cancelado.");
             }
             if (subCommand.equals("stop")) {
-                plugin.getActiveEventManager().endEvent("Detenido por administrador");
-                sender.sendMessage("§cEvento detenido.");
+                plugin.getActiveEventManager().forceCleanup("Detenido por administrador");
+                sender.sendMessage("§cEvento detenido y limpiado.");
             }
             if (subCommand.equals("reload")) {
                 plugin.reloadPluginConfig();
                 sender.sendMessage("§aConfiguración recargada.");
+            }
+            if (subCommand.equals("givescroll")) {
+                Player target = args.length >= 2 ? Bukkit.getPlayer(args[1]) : (sender instanceof Player ? (Player) sender : null);
+                if (target == null) {
+                    sender.sendMessage("§cJugador no encontrado.");
+                    return true;
+                }
+                ItemStack scroll = new ItemStack(Material.PAPER);
+                ItemMeta meta = scroll.getItemMeta();
+                meta.setDisplayName("§d§lPergamino de Retorno");
+                meta.setLore(List.of("§7Click derecho para volver a tu cama", "§7Un solo uso"));
+                NamespacedKey key = new NamespacedKey(plugin, "vevent_crafted_scroll");
+                meta.getPersistentDataContainer().set(key, PersistentDataType.BOOLEAN, true);
+                scroll.setItemMeta(meta);
+                target.getInventory().addItem(scroll);
+                sender.sendMessage("§aPergamino entregado a " + target.getName() + ".");
             }
         }
         return true;
@@ -71,6 +93,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 completions.add("stop");
                 completions.add("schedule");
                 completions.add("reload");
+                completions.add("givescroll");
             }
             String partial = args[0].toLowerCase();
             completions.removeIf(s -> !s.startsWith(partial));
@@ -80,6 +103,11 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             completions.add("hardcore");
             String partial = args[1].toLowerCase();
             completions.removeIf(s -> !s.startsWith(partial));
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("givescroll") && sender.hasPermission("vevent.admin")) {
+            String partial = args[1].toLowerCase();
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (p.getName().toLowerCase().startsWith(partial)) completions.add(p.getName());
+            }
         }
         return completions;
     }

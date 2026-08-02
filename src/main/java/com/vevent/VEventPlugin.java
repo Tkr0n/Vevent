@@ -50,8 +50,45 @@ public class VEventPlugin extends JavaPlugin {
         getCommand("vevent").setTabCompleter(cmdManager);
         getServer().getPluginManager().registerEvents(new ArenaListener(this), this);
         registerReturnScrollRecipe();
+        createReturnScrollDatapack();
 
         getLogger().info("vEvent Drops Plugin activado correctamente.");
+    }
+
+    private void createReturnScrollDatapack() {
+        java.io.File worldFolder = getServer().getWorlds().get(0).getWorldFolder();
+        java.io.File datapackFolder = new java.io.File(worldFolder, "datapacks/vevent_scroll");
+        java.io.File dataFolder = new java.io.File(datapackFolder, "data/vevent/item");
+
+        if (dataFolder.exists()) return;
+
+        dataFolder.mkdirs();
+
+        String itemJson = "{\n"
+                + "  \"model\": {\n"
+                + "    \"type\": \"minecraft:model\",\n"
+                + "    \"model\": \"minecraft:item/paper\"\n"
+                + "  },\n"
+                + "  \"components\": {\n"
+                + "    \"minecraft:item_name\": \"{\\\"text\\\":\\\"Pergamino de Retorno\\\",\\\"color\\\":\\\"light_purple\\\",\\\"bold\\\":true}\",\n"
+                + "    \"minecraft:lore\": [\n"
+                + "      \"{\\\"text\\\":\\\"Click derecho para volver a tu cama\\\",\\\"color\\\":\\\"gray\\\"}\",\n"
+                + "      \"{\\\"text\\\":\\\"Un solo uso\\\",\\\"color\\\":\\\"gray\\\"}\"\n"
+                + "    ],\n"
+                + "    \"minecraft:custom_data\": \"{vevent_crafted_scroll:true}\"\n"
+                + "  }\n"
+                + "}";
+
+        String mcmeta = "{\"pack\":{\"description\":\"vEvent Drops - Return Scroll\",\"pack_format\":46}}";
+
+        try {
+            java.nio.file.Files.writeString(new java.io.File(dataFolder, "return_scroll.json").toPath(), itemJson);
+            java.nio.file.Files.writeString(new java.io.File(datapackFolder, "pack.mcmeta").toPath(), mcmeta);
+            getLogger().info("Datapack 'vevent_scroll' creado en " + datapackFolder.getAbsolutePath());
+            getLogger().info("Ejecuta /minecraft:reload para activarlo. Luego: /give @p vevent:return_scroll");
+        } catch (Exception e) {
+            getLogger().warning("No se pudo crear el datapack: " + e.getMessage());
+        }
     }
 
     private void registerReturnScrollRecipe() {

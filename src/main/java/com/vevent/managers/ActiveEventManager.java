@@ -37,6 +37,7 @@ public class ActiveEventManager {
     private final List<Block> activeBarriers = new ArrayList<>();
     private final Map<Player, Scoreboard> previousScoreboards = new HashMap<>();
     private BukkitTask eventLoopTask;
+    private BukkitTask cleanupTask;
     private int secondsElapsed = 0;
 
     public ActiveEventManager(VEventPlugin plugin) {
@@ -435,12 +436,35 @@ public class ActiveEventManager {
         restoreScoreboards();
         eventLocation.getWorld().setTime(0);
         Bukkit.broadcastMessage("§aEvento concluido: " + reason);
+        Bukkit.broadcastMessage("§6¡Los cofres están disponibles! Serán eliminados en 5 minutos.");
         for (Player player : participants) if (player.isOnline()) giveReturnScroll(player);
         for (Entity mob : activeMobs) if (!mob.isDead()) mob.remove();
-        for (Block chest : activeChests) chest.setType(Material.AIR);
         for (Block spawner : activeSpawners) spawner.setType(Material.AIR);
         for (Block barrier : activeBarriers) barrier.setType(Material.AIR);
-        activeMobs.clear(); activeChests.clear(); activeSpawners.clear(); beaconBlocks.clear(); activeBarriers.clear(); participants.clear();
+        activeMobs.clear();
+        activeSpawners.clear();
+        activeBarriers.clear();
+
+        int cleanupDelay = plugin.getConfig().getInt("return-scroll.expiration-minutes", 5) * 60 * 20;
+        cleanupTask = Bukkit.getScheduler().runTaskLater(plugin, this::cleanupWorldBlocks, cleanupDelay);
+    }
+
+    private void cleanupWorldBlocks() {
+        for (Block chest : activeChests) chest.setType(Material.AIR);
+        activeChests.clear();
+        beaconBlocks.clear();
+        participants.clear();
+        cleanupTask = null;
+        Bukkit.broadcastMessage("§cLos cofres del evento han desaparecido.");
+    }
+
+    public void forceCleanup(String reason) {
+        endEvent(reason);
+        if (cleanupTask != null) {
+            cleanupTask.cancel();
+            cleanupTask = null;
+        }
+        cleanupWorldBlocks();
     }
 
     private void assignScoreboards() {
