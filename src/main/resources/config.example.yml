@@ -30,3 +30,25 @@ llm-generation:
       prompt-rules: "Mobs comunes y de nivel medio. Botín: diamantes, esmeraldas, manzanas de oro, encantamientos nivel 2-3."
     hardcore:
       prompt-rules: "Mobs básicos y de alto nivel. Botín: netherita, totems, élitras, encantamientos nivel 3-5."
+
+disenchant-table:
+  name: '§5§lMesa de Desvinculación'
+  xp-multiplier: 3
+
+redstone-chest:
+  name: '§6§lCofre de Redstone'
+  max-trace-distance: 60
+
+mission:
+  penalty-mob-count: 3
+  penalty-mob-health: 100.0
+  debuff-seconds: 300
+  teleport-distance: 500
+  tier-multiplier:
+    easy: 0.6
+    medium: 1.0
+    hardcore: 1.5
+
+mob-difficulty:
+  health-multiplier: 4.0
+  simple-damage-multiplier: 1.2

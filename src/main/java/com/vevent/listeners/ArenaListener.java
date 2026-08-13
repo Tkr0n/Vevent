@@ -127,13 +127,10 @@ public class ArenaListener implements Listener {
 
     private void consumeOneItem(org.bukkit.entity.Player player, ItemStack item) {
         int newAmount = item.getAmount() - 1;
-        item.setAmount(0);
-        if (newAmount > 0) {
-            ItemStack remainder = item.clone();
-            remainder.setAmount(newAmount);
-            player.getInventory().setItemInMainHand(remainder);
-        } else {
+        if (newAmount <= 0) {
             player.getInventory().setItemInMainHand(null);
+        } else {
+            item.setAmount(newAmount);
         }
     }
 }

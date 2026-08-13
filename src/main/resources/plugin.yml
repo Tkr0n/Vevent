@@ -17,3 +17,9 @@ permissions:
   vevent.player:
     description: Comandos de participación
     default: true
+  vevent.disenchant:
+    description: Usar la Mesa de Desvinculación
+    default: true
+  vevent.redstonechest:
+    description: Usar el Cofre de Redstone
+    default: true

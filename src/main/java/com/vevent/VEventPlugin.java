@@ -2,8 +2,13 @@ package com.vevent;
 
 import com.vevent.commands.CommandManager;
 import com.vevent.listeners.ArenaListener;
+import com.vevent.listeners.GlobalMobListener;
 import com.vevent.managers.ActiveEventManager;
+import com.vevent.managers.DisenchantManager;
 import com.vevent.managers.EventSchedulerManager;
+import com.vevent.managers.LookInfoManager;
+import com.vevent.managers.MissionManager;
+import com.vevent.managers.RedstoneChestManager;
 import com.vevent.utils.LLMClient;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -19,6 +24,10 @@ public class VEventPlugin extends JavaPlugin {
     private LLMClient llmClient;
     private EventSchedulerManager schedulerManager;
     private ActiveEventManager activeEventManager;
+    private DisenchantManager disenchantManager;
+    private RedstoneChestManager redstoneChestManager;
+    private LookInfoManager lookInfoManager;
+    private MissionManager missionManager;
 
     @Override
     public void onEnable() {
@@ -44,11 +53,16 @@ public class VEventPlugin extends JavaPlugin {
         this.llmClient = new LLMClient(this, llmEndpoint, llmModel, llmApiKey);
         this.activeEventManager = new ActiveEventManager(this);
         this.schedulerManager = new EventSchedulerManager(this, llmClient, activeEventManager);
+        this.disenchantManager = new DisenchantManager(this);
+        this.redstoneChestManager = new RedstoneChestManager(this);
+        this.lookInfoManager = new LookInfoManager(this);
+        this.missionManager = new MissionManager(this);
 
         CommandManager cmdManager = new CommandManager(this);
         getCommand("vevent").setExecutor(cmdManager);
         getCommand("vevent").setTabCompleter(cmdManager);
         getServer().getPluginManager().registerEvents(new ArenaListener(this), this);
+        new GlobalMobListener(this);
         registerReturnScrollRecipe();
         createReturnScrollDatapack();
 
@@ -126,11 +140,21 @@ public class VEventPlugin extends JavaPlugin {
         if (activeEventManager != null && activeEventManager.isEventInProgress()) {
             activeEventManager.endEvent("Apagado del servidor");
         }
+        if (lookInfoManager != null) {
+            lookInfoManager.stop();
+        }
+        if (disenchantManager != null) {
+            disenchantManager.stop();
+        }
+        if (redstoneChestManager != null) {
+            redstoneChestManager.stop();
+        }
     }
 
     public LLMClient getLlmClient() { return llmClient; }
     public EventSchedulerManager getSchedulerManager() { return schedulerManager; }
     public ActiveEventManager getActiveEventManager() { return activeEventManager; }
+    public MissionManager getMissionManager() { return missionManager; }
 
     public void reloadPluginConfig() {
         reloadConfig();

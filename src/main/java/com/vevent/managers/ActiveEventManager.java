@@ -298,6 +298,19 @@ public class ActiveEventManager {
         return 1.60;
     }
 
+    private static final Set<String> NO_SCALE_MOBS = Set.of(
+            "WITHER", "GUARDIAN", "ELDER_GUARDIAN", "WARDEN", "EVOKER", "BREEZE"
+    );
+
+    private static final Set<String> SIMPLE_MOBS = Set.of(
+            "ZOMBIE", "SKELETON", "HUSK", "DROWNED", "STRAY", "ZOMBIFIED_PIGLIN",
+            "ZOMBIE_VILLAGER", "SPIDER", "CAVE_SPIDER", "SILVERFISH", "CREEPER"
+    );
+
+    public boolean isParticipant(Player p) {
+        return participants.contains(p);
+    }
+
     private String formatMobName(String typeName) {
         String lower = typeName.toLowerCase().replace("_", " ");
         String[] words = lower.split(" ");
