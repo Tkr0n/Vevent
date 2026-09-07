@@ -16,20 +16,22 @@ public class MinecraftLauncher
     }
 
     public async Task<bool> LaunchMinecraftAsync(
-        MinecraftInstance instance,
+        InstalledGame game,
         string gameDirectory,
         string username,
+        string serverAddress,
+        int serverPort,
         IProgress<string>? statusProgress = null,
         CancellationToken cancellationToken = default)
     {
-        var javaPath = _javaManager.GetJavaPath(instance.JavaPath);
+        var javaPath = _javaManager.GetJavaPath(null);
         if (string.IsNullOrEmpty(javaPath))
         {
             statusProgress?.Report("Java no encontrado");
             return false;
         }
 
-        var arguments = BuildJvmArguments(instance, gameDirectory, username);
+        var arguments = BuildJvmArguments(game, gameDirectory, username, serverAddress, serverPort);
 
         statusProgress?.Report("Iniciando Minecraft...");
 
@@ -51,30 +53,23 @@ public class MinecraftLauncher
         return true;
     }
 
-    private string BuildJvmArguments(MinecraftInstance instance, string gameDirectory, string username)
+    private string BuildJvmArguments(InstalledGame game, string gameDir, string username, string server, int port)
     {
-        var version = instance.MinecraftVersion;
-        var clientJar = Path.Combine(gameDirectory, "versions", version, $"{version}.jar");
-        var assetIndex = $"mojang-{version}";
         var uuid = GenerateOfflineUuid(username);
-
-        var serverArg = string.IsNullOrEmpty(instance.ServerAddress)
-            ? string.Empty
-            : $"--server {instance.ServerAddress} --port {instance.ServerPort}";
-
-        return $"-Xms{instance.MinMemoryMb}M -Xmx{instance.MaxMemoryMb}M " +
-               $"-Djava.library.path=\"{gameDirectory}/natives\" " +
-               $"-cp \"{clientJar}\" " +
-               $"net.minecraft.client.main.Main " +
+        var cp = string.Join(Path.PathSeparator, game.Classpath);
+        var serverArg = string.IsNullOrEmpty(server) ? string.Empty : $"--server {server} --port {port}";
+        return $"-Xms512M -Xmx2048M " +
+               $"-Djava.library.path=\"{game.NativesDir}\" " +
+               $"-cp \"{cp}\" " +
+               $"{game.MainClass} " +
                $"--username {username} " +
-               $"--version {version} " +
-               $"--gameDir \"{gameDirectory}\" " +
-               $"--assets \"{gameDirectory}/assets\" " +
-               $"--assetIndex {assetIndex} " +
+               $"--version 1.20.4 " +
+               $"--gameDir \"{gameDir}\" " +
+               $"--assetsDir \"{game.AssetsDir}\" " +
+               $"--assetIndex {game.AssetIndexId} " +
                $"--uuid {uuid} " +
                $"--accessToken 0 " +
-               $"--userType mojang " +
-               $"--width 854 --height 480 " +
+               $"--userType legacy " +
                serverArg;
     }
 

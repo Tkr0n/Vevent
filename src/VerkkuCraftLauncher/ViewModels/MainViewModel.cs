@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using VerkkuCraftLauncher.Helpers;
 using VerkkuCraftLauncher.Models;
 using VerkkuCraftLauncher.Services;
 
@@ -14,6 +15,7 @@ public partial class MainViewModel : ObservableObject
     private readonly VpnManager _vpnManager;
     private readonly MinecraftLauncher _minecraftLauncher;
     private readonly UpdateManager _updateManager;
+    private readonly GameInstallerService? _gameInstaller;
 
     [ObservableProperty] private string _statusMessage = "Iniciando VerkkuCraft...";
     [ObservableProperty] private int _progressValue;
@@ -30,7 +32,8 @@ public partial class MainViewModel : ObservableObject
         PluginManager pluginManager,
         VpnManager vpnManager,
         MinecraftLauncher minecraftLauncher,
-        UpdateManager updateManager)
+        UpdateManager updateManager,
+        GameInstallerService? gameInstaller = null)
     {
         _manifestService = manifestService;
         _javaManager = javaManager;
@@ -39,6 +42,7 @@ public partial class MainViewModel : ObservableObject
         _vpnManager = vpnManager;
         _minecraftLauncher = minecraftLauncher;
         _updateManager = updateManager;
+        _gameInstaller = gameInstaller;
     }
 
     public async Task InitializeAsync()
@@ -111,20 +115,21 @@ public partial class MainViewModel : ObservableObject
         IsJugarEnabled = false;
         StatusMessage = "Iniciando Minecraft...";
 
-        var instance = new MinecraftInstance
-        {
-            Name = "VerkkuCraft",
-            MinecraftVersion = Manifest.ServerVersion,
-            JavaPath = _javaManager.GetJavaPath(null) ?? "java",
-            ServerAddress = Manifest.DefaultServerConfig.ServerName,
-            ServerPort = Manifest.DefaultServerConfig.ServerPort,
-            UseVPN = true
-        };
+        using var http = new HttpDownloader();
+        var installer = _gameInstaller ?? new GameInstallerService(
+            new MojangMetaService(http),
+            new FabricService(http),
+            new ModrinthService(http));
+
+        var game = await installer.EnsureInstalledAsync(
+            Manifest.ServerVersion, Manifest.ClientMods, CreateStringProgress(), CreateProgress());
 
         var launched = await _minecraftLauncher.LaunchMinecraftAsync(
-            instance,
+            game,
             _serverManager.GetServerDirectory(Manifest.ServerVersion),
             Username,
+            Manifest.DefaultServerConfig.ServerAddress,
+            Manifest.DefaultServerConfig.ServerPort,
             CreateStringProgress());
 
         if (launched)
