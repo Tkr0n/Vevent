@@ -9,6 +9,8 @@
 
     <AssemblyName>VerkkuCraftLauncher</AssemblyName>
     <RootNamespace>VerkkuCraftLauncher</RootNamespace>
+    <Version>1.0.0</Version>
+    <Description>VerkkuCraft Minecraft Server Launcher</Description>
   </PropertyGroup>
 
   <ItemGroup>
