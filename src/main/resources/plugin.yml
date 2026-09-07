@@ -23,3 +23,9 @@ permissions:
   vevent.redstonechest:
     description: Usar el Cofre de Redstone
     default: true
+  vevent.tpcarpet.use:
+    description: Usar Alfombras TP (pararse + agacharse)
+    default: true
+  vevent.tpcarpet.place:
+    description: Colocar y enlazar Alfombras TP
+    default: true

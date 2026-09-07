@@ -148,6 +148,50 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 target.getInventory().addItem(chest);
                 sender.sendMessage("§aCofre de Redstone entregado a " + target.getName() + ".");
             }
+            if (subCommand.equals("givecarpet")) {
+                Player target = null;
+                Material color = null;
+                if (args.length == 1) {
+                    if (!(sender instanceof Player self)) {
+                        sender.sendMessage("§cEspecifica jugador. Uso: /vevent givecarpet [jugador] [color]");
+                        return true;
+                    }
+                    target = self;
+                    color = Material.WHITE_CARPET;
+                } else if (args.length == 2) {
+                    Material asColor = com.vevent.managers.TpCarpetManager.parseCarpetColor(args[1]);
+                    if (asColor != null) {
+                        if (!(sender instanceof Player self)) {
+                            sender.sendMessage("§cEspecifica jugador. Uso: /vevent givecarpet [jugador] [color]");
+                            return true;
+                        }
+                        target = self;
+                        color = asColor;
+                    } else {
+                        target = Bukkit.getPlayer(args[1]);
+                        color = Material.WHITE_CARPET;
+                        if (target == null) {
+                            sender.sendMessage("§cJugador no encontrado. Uso: /vevent givecarpet [jugador] [color]");
+                            return true;
+                        }
+                    }
+                } else {
+                    target = Bukkit.getPlayer(args[1]);
+                    color = com.vevent.managers.TpCarpetManager.parseCarpetColor(args[2]);
+                    if (target == null) {
+                        sender.sendMessage("§cJugador no encontrado.");
+                        return true;
+                    }
+                    if (color == null) {
+                        sender.sendMessage("§cColor inválido. Usa: blanco, rojo, azul, ...");
+                        return true;
+                    }
+                }
+                ItemStack carpet = plugin.getTpCarpetManager().createCarpetItem(color);
+                carpet.setAmount(2);
+                target.getInventory().addItem(carpet);
+                sender.sendMessage("§aAlfombra TP [" + com.vevent.managers.TpCarpetManager.spanishColorName(color) + "] x2 entregada a " + target.getName() + ".");
+            }
         }
         return true;
     }
@@ -169,6 +213,7 @@ public class CommandManager implements CommandExecutor, TabCompleter {
                 completions.add("givescroll");
                 completions.add("givetable");
                 completions.add("givechest");
+                completions.add("givecarpet");
                 completions.add("miningmission");
                 completions.add("craftingmission");
                 completions.add("acceptmission");
@@ -188,6 +233,22 @@ public class CommandManager implements CommandExecutor, TabCompleter {
             String partial = args[1].toLowerCase();
             for (Player p : Bukkit.getOnlinePlayers()) {
                 if (p.getName().toLowerCase().startsWith(partial)) completions.add(p.getName());
+            }
+            for (String c : com.vevent.managers.TpCarpetManager.colorSuggestions()) {
+                if (c.startsWith(partial)) completions.add(c);
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("givecarpet") && sender.hasPermission("vevent.admin")) {
+            String partial = args[1].toLowerCase();
+            for (Player p : Bukkit.getOnlinePlayers()) {
+                if (p.getName().toLowerCase().startsWith(partial)) completions.add(p.getName());
+            }
+            for (String c : com.vevent.managers.TpCarpetManager.colorSuggestions()) {
+                if (c.startsWith(partial)) completions.add(c);
+            }
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("givecarpet") && sender.hasPermission("vevent.admin")) {
+            String partial = args[2].toLowerCase();
+            for (String c : com.vevent.managers.TpCarpetManager.colorSuggestions()) {
+                if (c.startsWith(partial)) completions.add(c);
             }
         }
         return completions;

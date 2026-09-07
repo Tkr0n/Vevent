@@ -9,6 +9,7 @@ import com.vevent.managers.EventSchedulerManager;
 import com.vevent.managers.LookInfoManager;
 import com.vevent.managers.MissionManager;
 import com.vevent.managers.RedstoneChestManager;
+import com.vevent.managers.TpCarpetManager;
 import com.vevent.utils.LLMClient;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -28,6 +29,7 @@ public class VEventPlugin extends JavaPlugin {
     private RedstoneChestManager redstoneChestManager;
     private LookInfoManager lookInfoManager;
     private MissionManager missionManager;
+    private TpCarpetManager tpCarpetManager;
 
     @Override
     public void onEnable() {
@@ -57,6 +59,7 @@ public class VEventPlugin extends JavaPlugin {
         this.redstoneChestManager = new RedstoneChestManager(this);
         this.lookInfoManager = new LookInfoManager(this);
         this.missionManager = new MissionManager(this);
+        this.tpCarpetManager = new TpCarpetManager(this);
 
         CommandManager cmdManager = new CommandManager(this);
         getCommand("vevent").setExecutor(cmdManager);
@@ -149,12 +152,16 @@ public class VEventPlugin extends JavaPlugin {
         if (redstoneChestManager != null) {
             redstoneChestManager.stop();
         }
+        if (tpCarpetManager != null) {
+            tpCarpetManager.stop();
+        }
     }
 
     public LLMClient getLlmClient() { return llmClient; }
     public EventSchedulerManager getSchedulerManager() { return schedulerManager; }
     public ActiveEventManager getActiveEventManager() { return activeEventManager; }
     public MissionManager getMissionManager() { return missionManager; }
+    public TpCarpetManager getTpCarpetManager() { return tpCarpetManager; }
 
     public void reloadPluginConfig() {
         reloadConfig();
