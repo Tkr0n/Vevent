@@ -41,8 +41,7 @@ public partial class MainViewModel : ObservableObject
         _updateManager = updateManager;
     }
 
-    [RelayCommand]
-    private async Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         try
         {
