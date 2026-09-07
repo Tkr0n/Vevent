@@ -3,7 +3,8 @@ plugins {
 }
 
 group = 'com.vevent'
-version = '1.0.0'
+// La versión se puede sobreescribir desde el pipeline con -PpluginVersion=<tag sin la v>
+version = findProperty('pluginVersion') ?: '1.0.0'
 
 repositories {
     mavenCentral()

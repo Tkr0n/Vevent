@@ -1,6 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using VerkkuCraftLauncher.Helpers;
 using VerkkuCraftLauncher.Models;
 using VerkkuCraftLauncher.Services;
 
@@ -15,7 +14,9 @@ public partial class MainViewModel : ObservableObject
     private readonly VpnManager _vpnManager;
     private readonly MinecraftLauncher _minecraftLauncher;
     private readonly UpdateManager _updateManager;
-    private readonly GameInstallerService? _gameInstaller;
+    private readonly GameInstallerService _gameInstaller;
+    private readonly LauncherAccountService _accountService;
+    private InstalledGame? _installedGame;
 
     [ObservableProperty] private string _statusMessage = "Iniciando VerkkuCraft...";
     [ObservableProperty] private int _progressValue;
@@ -33,7 +34,8 @@ public partial class MainViewModel : ObservableObject
         VpnManager vpnManager,
         MinecraftLauncher minecraftLauncher,
         UpdateManager updateManager,
-        GameInstallerService? gameInstaller = null)
+        GameInstallerService gameInstaller,
+        LauncherAccountService accountService)
     {
         _manifestService = manifestService;
         _javaManager = javaManager;
@@ -43,12 +45,15 @@ public partial class MainViewModel : ObservableObject
         _minecraftLauncher = minecraftLauncher;
         _updateManager = updateManager;
         _gameInstaller = gameInstaller;
+        _accountService = accountService;
     }
 
     public async Task InitializeAsync()
     {
         try
         {
+            Username = _accountService.DetectUsername() ?? string.Empty;
+
             StatusMessage = "Obteniendo manifiesto...";
             Manifest = await _manifestService.FetchManifestAsync();
             
@@ -73,14 +78,9 @@ public partial class MainViewModel : ObservableObject
             StatusMessage = "Verificando Java...";
             await _javaManager.EnsureJavaInstalledAsync();
 
-            // Download server
-            StatusMessage = "Descargando servidor...";
-            await _serverManager.DownloadServerJarAsync(Manifest.ServerJarUrl, Manifest.ServerVersion, CreateProgress());
-
-            // Configure server
-            StatusMessage = "Configurando servidor...";
-            await _serverManager.ConfigureServerAsync(Manifest.DefaultServerConfig, Manifest.ServerVersion);
-            await _serverManager.AcceptEulaAsync(Manifest.ServerVersion);
+            // Install game client + Fabric + mods
+            StatusMessage = "Instalando juego y mods...";
+            _installedGame = await _gameInstaller.EnsureInstalledAsync(Manifest.ServerVersion, Manifest.ClientMods, CreateStringProgress(), CreateProgress());
 
             // Download plugins
             StatusMessage = "Descargando plugins...";
@@ -115,17 +115,11 @@ public partial class MainViewModel : ObservableObject
         IsJugarEnabled = false;
         StatusMessage = "Iniciando Minecraft...";
 
-        using var http = new HttpDownloader();
-        var installer = _gameInstaller ?? new GameInstallerService(
-            new MojangMetaService(http),
-            new FabricService(http),
-            new ModrinthService(http));
-
-        var game = await installer.EnsureInstalledAsync(
+        _installedGame ??= await _gameInstaller.EnsureInstalledAsync(
             Manifest.ServerVersion, Manifest.ClientMods, CreateStringProgress(), CreateProgress());
 
         var launched = await _minecraftLauncher.LaunchMinecraftAsync(
-            game,
+            _installedGame,
             _serverManager.GetServerDirectory(Manifest.ServerVersion),
             Username,
             Manifest.DefaultServerConfig.ServerAddress,

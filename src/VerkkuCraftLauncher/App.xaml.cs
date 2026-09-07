@@ -23,6 +23,11 @@ public partial class App : Application
         var vpnManager = new VpnManager(downloader);
         var minecraftLauncher = new MinecraftLauncher(javaManager);
         var updateManager = new UpdateManager(downloader);
+        var mojangMetaService = new MojangMetaService(downloader);
+        var fabricService = new FabricService(downloader);
+        var modrinthService = new ModrinthService(downloader);
+        var gameInstaller = new GameInstallerService(mojangMetaService, fabricService, modrinthService);
+        var accountService = new LauncherAccountService();
 
         // Create ViewModel
         _mainViewModel = new MainViewModel(
@@ -32,7 +37,9 @@ public partial class App : Application
             pluginManager,
             vpnManager,
             minecraftLauncher,
-            updateManager);
+            updateManager,
+            gameInstaller,
+            accountService);
 
         // Set MainWindow DataContext and show
         var mainWindow = new MainWindow

@@ -19,55 +19,59 @@
         </ResourceDictionary>
     </ui:FluentWindow.Resources>
 
-    <Grid Margin="20">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
-            <TextBlock Text="⛏" FontSize="48" VerticalAlignment="Center"/>
-            <StackPanel Margin="15,0,0,0">
-                <TextBlock Text="VerkkuCraft" FontSize="32" FontWeight="Bold" Foreground="#00d4ff"/>
-                <TextBlock Text="Launcher para el servidor" FontSize="14" Foreground="#888"/>
+        <!-- Title Bar with buttons -->
+        <Grid Grid.Row="0" Background="#0f1a30" Height="40" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="VerkkuCraft Launcher" VerticalAlignment="Center" 
+                       Foreground="#888" FontSize="12" Margin="15,0,0,0"/>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="—" Width="40" Height="40" Background="Transparent" 
+                        Foreground="#888" BorderThickness="0" FontSize="14"
+                        Click="MinimizeButton_Click"/>
+                <Button Content="✕" Width="40" Height="40" Background="Transparent" 
+                        Foreground="#888" BorderThickness="0" FontSize="14"
+                        Click="CloseButton_Click"/>
             </StackPanel>
-        </StackPanel>
+        </Grid>
 
-        <!-- Status Area -->
-        <Border Grid.Row="1" Background="#16213e" CornerRadius="10" Padding="20">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
+        <!-- Main Content -->
+        <Grid Grid.Row="1" Margin="20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" 
-                           Text="{Binding StatusMessage}" 
-                           FontSize="16" 
-                           Foreground="#00d4ff"
-                           TextWrapping="Wrap"
-                           Margin="0,0,0,15"/>
+            <!-- Logo -->
+            <Image Grid.Row="0" 
+                   Source="Assets/img/Verkkucraft-logo.png" 
+                   Height="80" 
+                   HorizontalAlignment="Center"
+                   Margin="0,10,0,20"
+                   RenderOptions.BitmapScalingMode="HighQuality"/>
 
-                <ProgressBar Grid.Row="1" 
-                             Value="{Binding ProgressValue}" 
-                             Maximum="100"
-                             Height="8"
-                             Background="#1a1a2e"
-                             Foreground="#00d4ff"
-                             Visibility="{Binding IsProgressIndeterminate, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                <TextBlock Grid.Row="2" 
-                           Text="Preparando todo..."
-                           FontSize="12"
-                           Foreground="#666"
-                           Margin="0,10,0,0"/>
-            </Grid>
-        </Border>
+        <!-- Status Text -->
+        <TextBlock Grid.Row="1"
+                   Text="{Binding StatusMessage}"
+                   FontSize="12"
+                   Foreground="#aaa"
+                   HorizontalAlignment="Center"
+                   TextAlignment="Center"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,10"/>
 
         <!-- Username Input -->
         <StackPanel Grid.Row="2" Margin="0,15,0,0">
@@ -100,5 +104,6 @@
                    Height="60"
                    Margin="0,20,0,0"
                    HorizontalAlignment="Stretch"/>
+    </Grid>
     </Grid>
 </ui:FluentWindow>

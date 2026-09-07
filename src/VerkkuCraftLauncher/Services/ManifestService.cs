@@ -7,7 +7,7 @@ namespace VerkkuCraftLauncher.Services;
 public class ManifestService
 {
     private readonly HttpDownloader _downloader;
-    private const string ManifestUrl = "https://raw.githubusercontent.com/{owner}/{repo}/main/manifest.json";
+    private const string ManifestUrl = "https://raw.githubusercontent.com/Tkr0n/Vevent/main/manifest.json";
 
     public ManifestService(HttpDownloader downloader)
     {

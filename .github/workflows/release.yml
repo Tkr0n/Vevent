@@ -1,0 +1,40 @@
+name: Build & Release Plugin
+
+# Se ejecuta al pushear un tag v* (ej. v1.0.1):
+#   git tag v1.0.1 && git push origin v1.0.1
+# Compila vEventDrops con Gradle y sube el .jar al GitHub Release del tag.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Gradle 8.10
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10"
+
+      - name: Build plugin
+        run: gradle build -PpluginVersion="${GITHUB_REF_NAME#v}"
+
+      - name: Upload JAR to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/*.jar
+          generate_release_notes: true

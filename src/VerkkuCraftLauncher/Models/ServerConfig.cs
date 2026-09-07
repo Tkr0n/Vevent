@@ -3,6 +3,7 @@ namespace VerkkuCraftLauncher.Models;
 public class ServerConfig
 {
     public string ServerName { get; set; } = string.Empty;
+    public string ServerAddress { get; set; } = string.Empty;
     public string Motd { get; set; } = string.Empty;
     public int MaxPlayers { get; set; } = 20;
     public int ServerPort { get; set; } = 25565;

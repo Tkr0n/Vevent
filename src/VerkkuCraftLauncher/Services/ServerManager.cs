@@ -7,13 +7,11 @@ namespace VerkkuCraftLauncher.Services;
 public class ServerManager
 {
     private readonly HttpDownloader _downloader;
-    private readonly FileExtractor _extractor;
     private const string ServerDirectory = "server";
 
-    public ServerManager(HttpDownloader downloader, FileExtractor extractor)
+    public ServerManager(HttpDownloader downloader)
     {
         _downloader = downloader;
-        _extractor = extractor;
     }
 
     public async Task<bool> DownloadServerJarAsync(string paperUrl, string version, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
