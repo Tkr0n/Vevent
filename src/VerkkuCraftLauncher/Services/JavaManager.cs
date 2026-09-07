@@ -35,6 +35,32 @@ public class JavaManager
         return FindOnPath("java.exe");
     }
 
+    public string? FindJavaInstallation()
+    {
+        return GetJavaPath(null);
+    }
+
+    public async Task EnsureJavaInstalledAsync()
+    {
+        var javaPath = FindJavaInstallation();
+        if (javaPath != null)
+            return;
+
+        await Task.Run(() =>
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://adoptium.net/",
+                UseShellExecute = true
+            });
+        });
+
+        throw new InvalidOperationException(
+            "Java is required to run Minecraft but was not found on your system. " +
+            "A browser window has been opened to download Java. " +
+            "Please install Java and restart the launcher.");
+    }
+
     private static string? FindOnPath(string fileName)
     {
         var pathEnv = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
