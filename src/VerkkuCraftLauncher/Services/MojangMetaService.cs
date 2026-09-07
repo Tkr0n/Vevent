@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Json;
 using VerkkuCraftLauncher.Helpers;
 using VerkkuCraftLauncher.Models;
@@ -66,6 +67,68 @@ public class MojangMetaService
         Size = e.GetProperty("size").GetInt64()
     };
 
+    public async Task<GameFiles> DownloadGameAsync(
+        MojangVersionInfo info, string baseDir,
+        IProgress<int>? progress = null, CancellationToken ct = default)
+    {
+        var versionDir = Path.Combine(baseDir, "versions", info.Id);
+        var libsDir = Path.Combine(baseDir, "libraries");
+        var nativesDir = Path.Combine(versionDir, "natives");
+        var assetsDir = Path.Combine(baseDir, "assets");
+        Directory.CreateDirectory(versionDir);
+        Directory.CreateDirectory(libsDir);
+        Directory.CreateDirectory(nativesDir);
+
+        var clientJar = Path.Combine(versionDir, $"{info.Id}.jar");
+        if (!File.Exists(clientJar))
+            await _downloader.DownloadFileAsync(info.ClientJarUrl, clientJar, null, ct);
+
+        var classpath = new List<string> { clientJar };
+        var allowed = info.Libraries.Where(IsAllowedOnWindows).ToList();
+        int done = 0;
+        foreach (var lib in allowed)
+        {
+            string? classifier = null;
+            if (lib.Natives != null && lib.Natives.TryGetValue("windows", out var nat))
+                classifier = nat.Replace("${arch}", "64");
+            if (classifier != null && lib.Downloads_Classifiers != null &&
+                lib.Downloads_Classifiers.TryGetValue(classifier, out var natArt))
+            {
+                var tmp = Path.Combine(Path.GetTempPath(), Path.GetFileName(natArt.Path));
+                if (!File.Exists(tmp)) await _downloader.DownloadFileAsync(natArt.Url, tmp, null, ct);
+                System.IO.Compression.ZipFile.ExtractToDirectory(tmp, nativesDir, overwriteFiles: true);
+            }
+            else if (lib.Downloads_Artifact != null)
+            {
+                var dest = Path.Combine(libsDir, lib.Downloads_Artifact.Path.Replace('/', Path.DirectorySeparatorChar));
+                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                if (!File.Exists(dest))
+                    await _downloader.DownloadFileAsync(lib.Downloads_Artifact.Url, dest, null, ct);
+                classpath.Add(dest);
+            }
+            done++;
+            progress?.Report(done * 100 / allowed.Count);
+        }
+
+        // Assets: índice + objetos referenciados
+        var indexPath = Path.Combine(assetsDir, "indexes", $"{info.AssetIndexId}.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(indexPath)!);
+        if (!File.Exists(indexPath))
+            await _downloader.DownloadFileAsync(info.AssetIndexUrl, indexPath, null, ct);
+        using var index = JsonDocument.Parse(await File.ReadAllTextAsync(indexPath, ct));
+        foreach (var obj in index.RootElement.GetProperty("objects").EnumerateObject())
+        {
+            var hash = obj.Value.GetProperty("hash").GetString()!;
+            var dest = Path.Combine(assetsDir, "objects", hash[..2], hash);
+            if (File.Exists(dest)) continue;
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+            await _downloader.DownloadFileAsync(
+                $"https://resources.download.minecraft.net/{hash[..2]}/{hash}", dest, null, ct);
+        }
+
+        return new GameFiles { Classpath = classpath, NativesDir = nativesDir, AssetsDir = assetsDir };
+    }
+
     public static bool IsAllowedOnWindows(MojangLibrary lib)
     {
         if (lib.Rules == null || lib.Rules.Count == 0) return true;
@@ -79,4 +142,11 @@ public class MojangMetaService
         }
         return allowed;
     }
+}
+
+public class GameFiles
+{
+    public List<string> Classpath { get; set; } = new();
+    public string NativesDir { get; set; } = string.Empty;
+    public string AssetsDir { get; set; } = string.Empty;
 }
