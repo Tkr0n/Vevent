@@ -7,7 +7,8 @@ namespace VerkkuCraftLauncher.Services;
 public class ManifestService
 {
     private readonly HttpDownloader _downloader;
-    private const string ManifestUrl = "https://raw.githubusercontent.com/Tkr0n/Vevent/main/manifest.json";
+    // TEMPORAL prueba local: apunta a la rama hasta el merge a main
+    private const string ManifestUrl = "https://raw.githubusercontent.com/Tkr0n/Vevent/feat/standalone-fabric/manifest.json";
 
     public ManifestService(HttpDownloader downloader)
     {
