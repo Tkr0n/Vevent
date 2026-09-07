@@ -11,6 +11,7 @@ public class HttpDownloader : IDisposable
     {
         _httpClient = new HttpClient();
         _httpClient.Timeout = TimeSpan.FromMinutes(30);
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("VerkkuCraftLauncher/1.0.0 (https://github.com/Tkr0n/Vevent)");
     }
 
     public async Task DownloadFileAsync(
