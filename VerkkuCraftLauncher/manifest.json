@@ -1,0 +1,47 @@
+{
+  "launcherVersion": "1.0.0",
+  "launcherDownloadUrl": "https://github.com/{owner}/{repo}/releases/latest/download/VerkkuCraftLauncher.exe",
+  "serverJarUrl": "https://api.papermc.io/v2/projects/paper/versions/1.20.4/builds/498/downloads/paper-1.20.4-498.jar",
+  "serverVersion": "1.20.4",
+  "paperBuild": "498",
+  "plugins": [
+    {
+      "name": "vEventDrops",
+      "fileName": "vEventDrops-1.0.0.jar",
+      "downloadUrl": "https://github.com/{owner}/{repo}/releases/download/plugins/vEventDrops-1.0.0.jar",
+      "version": "1.0.0",
+      "fileSize": 0,
+      "sha256": ""
+    },
+    {
+      "name": "GravesX",
+      "fileName": "GravesX-2026.4.9.1.jar",
+      "downloadUrl": "https://github.com/{owner}/{repo}/releases/download/plugins/GravesX-2026.4.9.1.jar",
+      "version": "2026.4.9.1",
+      "fileSize": 0,
+      "sha256": ""
+    },
+    {
+      "name": "spark",
+      "fileName": "spark-2.8.119.jar",
+      "downloadUrl": "https://github.com/{owner}/{repo}/releases/download/plugins/spark-2.8.119.jar",
+      "version": "2.8.119",
+      "fileSize": 0,
+      "sha256": ""
+    }
+  ],
+  "defaultServerConfig": {
+    "serverName": "VerkkuCraft",
+    "motd": "§6Bienvenido a §bVerkkuCraft§6! §7Servidor de la comunidad",
+    "maxPlayers": 20,
+    "serverPort": 25565,
+    "gameMode": "survival",
+    "onlineMode": false,
+    "allowFlight": true,
+    "spawnProtection": 0,
+    "viewDistance": 10,
+    "difficulty": "normal",
+    "whitelist": false,
+    "ipWhitelist": ""
+  }
+}
