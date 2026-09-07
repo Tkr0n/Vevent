@@ -2,11 +2,103 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-        Title="VerkkuCraft Launcher" Height="450" Width="600"
+        xmlns:viewModels="clr-namespace:VerkkuCraftLauncher.ViewModels"
+        Title="VerkkuCraft Launcher" 
+        Width="700" Height="500"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Background="#1a1a2e">
-    <Grid>
+        Background="#1a1a2e"
+        Foreground="White">
 
+    <ui:FluentWindow.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Dark"/>
+                <ui:ControlsDictionary/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </ui:FluentWindow.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+            <TextBlock Text="⛏" FontSize="48" VerticalAlignment="Center"/>
+            <StackPanel Margin="15,0,0,0">
+                <TextBlock Text="VerkkuCraft" FontSize="32" FontWeight="Bold" Foreground="#00d4ff"/>
+                <TextBlock Text="Launcher para el servidor" FontSize="14" Foreground="#888"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Status Area -->
+        <Border Grid.Row="1" Background="#16213e" CornerRadius="10" Padding="20">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" 
+                           Text="{Binding StatusMessage}" 
+                           FontSize="16" 
+                           Foreground="#00d4ff"
+                           TextWrapping="Wrap"
+                           Margin="0,0,0,15"/>
+
+                <ProgressBar Grid.Row="1" 
+                             Value="{Binding ProgressValue}" 
+                             Maximum="100"
+                             Height="8"
+                             Background="#1a1a2e"
+                             Foreground="#00d4ff"
+                             Visibility="{Binding IsProgressIndeterminate, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                <TextBlock Grid.Row="2" 
+                           Text="Preparando todo..."
+                           FontSize="12"
+                           Foreground="#666"
+                           Margin="0,10,0,0"/>
+            </Grid>
+        </Border>
+
+        <!-- Username Input -->
+        <StackPanel Grid.Row="2" Margin="0,15,0,0">
+            <TextBlock Text="Tu nombre de jugador:" FontSize="14" Foreground="#888" Margin="0,0,0,5"/>
+            <ui:TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                       PlaceholderText="Ingresa tu nombre..."
+                       Icon="{ui:SymbolIcon Person24}"
+                       FontSize="16"/>
+        </StackPanel>
+
+        <!-- VPN Status -->
+        <Border Grid.Row="3" Background="#0f3460" CornerRadius="8" Padding="15" Margin="0,15,0,0">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="🔒" FontSize="20" VerticalAlignment="Center"/>
+                <StackPanel Margin="10,0,0,0">
+                    <TextBlock Text="Tailscale VPN" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock Text="Necesario para voz UDP" FontSize="12" Foreground="#888"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Play Button -->
+        <ui:Button Grid.Row="4" 
+                   Content="🎮 JUGAR"
+                   Command="{Binding JugarCommand}"
+                   IsEnabled="{Binding IsJugarEnabled}"
+                   Appearance="Primary"
+                   FontSize="20"
+                   FontWeight="Bold"
+                   Height="60"
+                   Margin="0,20,0,0"
+                   HorizontalAlignment="Stretch"/>
     </Grid>
 </ui:FluentWindow>
