@@ -35,7 +35,7 @@ public class GameInstallerService
         progress?.Report(new DownloadProgress(92, "Instalando Fabric..."));
         var fabric = await _fabric.ResolveAsync(mcVersion, ct);
         var fabricLibs = await _fabric.DownloadLibrariesAsync(
-            fabric, Path.Combine(baseDir, "libraries"), ct);
+            fabric, Path.Combine(baseDir, "libraries"), progress, ct);
         progress?.Report(new DownloadProgress(97, "Descargando mods..."));
         var modsDir = Path.Combine(baseDir, "mods");
         foreach (var mod in mods)

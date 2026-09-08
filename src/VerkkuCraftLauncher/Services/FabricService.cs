@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Json;
 using VerkkuCraftLauncher.Helpers;
+using VerkkuCraftLauncher.Models;
 
 namespace VerkkuCraftLauncher.Services;
 
@@ -44,16 +45,25 @@ public class FabricService
     }
 
     public async Task<List<string>> DownloadLibrariesAsync(
-        FabricInfo info, string libsDir, CancellationToken ct = default)
+        FabricInfo info, string libsDir,
+        IProgress<DownloadProgress>? progress = null, CancellationToken ct = default)
     {
         var result = new List<string>();
+        int done = 0;
         foreach (var (url, path) in info.Libraries)
         {
             var dest = Path.Combine(libsDir, path.Replace('/', Path.DirectorySeparatorChar));
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             if (!File.Exists(dest))
-                await _downloader.DownloadFileAsync(url, dest, null, ct);
+            {
+                var libName = path.Split('/').Last();
+                var pct = done * 100 / Math.Max(info.Libraries.Count, 1);
+                progress?.Report(new DownloadProgress(pct, $"Descargando Fabric lib {libName}..."));
+                await _downloader.DownloadFileAsync(url, dest,
+                    new Progress<int>(p => progress?.Report(new DownloadProgress(pct + p / Math.Max(info.Libraries.Count, 1), $"Descargando Fabric lib {libName}..."))), ct);
+            }
             result.Add(dest);
+            done++;
         }
         return result;
     }

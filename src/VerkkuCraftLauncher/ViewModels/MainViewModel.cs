@@ -98,7 +98,7 @@ public partial class MainViewModel : ObservableObject
             foreach (var plugin in Manifest.Plugins)
             {
                 AppLogger.Log($"  Plugin: {plugin.FileName} from {plugin.DownloadUrl}");
-                await _pluginManager.DownloadPluginAsync(plugin, Manifest.ServerVersion, CreateProgress());
+                await _pluginManager.DownloadPluginAsync(plugin, Manifest.ServerVersion, CreateDownloadProgress());
                 AppLogger.Log($"  Plugin {plugin.FileName} OK");
             }
 
@@ -108,7 +108,7 @@ public partial class MainViewModel : ObservableObject
             {
                 AppLogger.Log("Tailscale not found, installing...");
                 StatusMessage = "Instalando Tailscale...";
-                await _vpnManager.InstallTailscaleAsync(CreateProgress());
+                await _vpnManager.InstallTailscaleAsync(CreateDownloadProgress());
                 AppLogger.Log("Tailscale install complete");
             }
             else

@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using VerkkuCraftLauncher.Helpers;
+using VerkkuCraftLauncher.Models;
 
 namespace VerkkuCraftLauncher.Services;
 
@@ -46,11 +47,15 @@ public class VpnManager
         }
     }
 
-    public async Task InstallTailscaleAsync(IProgress<int>? progress = null, CancellationToken cancellationToken = default)
+    public async Task InstallTailscaleAsync(IProgress<DownloadProgress>? progress = null, CancellationToken cancellationToken = default)
     {
         var tempPath = Path.Combine(Path.GetTempPath(), "tailscale-setup.exe");
-        await _downloader.DownloadFileAsync(TailscaleDownloadUrl, tempPath, progress, cancellationToken);
+        progress?.Report(new DownloadProgress(0, "Descargando instalador de Tailscale..."));
+        await _downloader.DownloadFileAsync(TailscaleDownloadUrl, tempPath,
+            new Progress<int>(p => progress?.Report(new DownloadProgress(p, "Descargando instalador de Tailscale..."))),
+            cancellationToken);
 
+        progress?.Report(new DownloadProgress(100, "Instalando Tailscale..."));
         var process = Process.Start(new ProcessStartInfo
         {
             FileName = tempPath,
@@ -60,6 +65,7 @@ public class VpnManager
         });
 
         await process!.WaitForExitAsync(cancellationToken);
+        progress?.Report(new DownloadProgress(100, "Tailscale instalado"));
     }
 
     public async Task ConnectWithAuthKeyAsync(string authKey, CancellationToken cancellationToken = default)

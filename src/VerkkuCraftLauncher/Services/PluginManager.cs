@@ -15,7 +15,7 @@ public class PluginManager
         _downloader = downloader;
     }
 
-    public async Task<bool> DownloadPluginAsync(PluginInfo plugin, string version, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
+    public async Task<bool> DownloadPluginAsync(PluginInfo plugin, string version, IProgress<DownloadProgress>? progress = null, CancellationToken cancellationToken = default)
     {
         var pluginsDir = Path.Combine(PluginsDirectory, version);
         Directory.CreateDirectory(pluginsDir);
@@ -24,12 +24,17 @@ public class PluginManager
         
         if (File.Exists(pluginPath))
         {
+            if (string.IsNullOrEmpty(plugin.Sha256)) return true;
             var existingHash = await ComputeSha256Async(pluginPath, cancellationToken);
             if (existingHash.Equals(plugin.Sha256, StringComparison.OrdinalIgnoreCase))
                 return true;
         }
 
-        await _downloader.DownloadFileAsync(plugin.DownloadUrl, pluginPath, progress, cancellationToken);
+        progress?.Report(new DownloadProgress(0, $"Descargando {plugin.FileName}..."));
+        await _downloader.DownloadFileAsync(plugin.DownloadUrl, pluginPath,
+            new Progress<int>(p => progress?.Report(new DownloadProgress(p, $"Descargando {plugin.FileName}..."))),
+            cancellationToken);
+        progress?.Report(new DownloadProgress(100, $"{plugin.FileName} descargado"));
         return File.Exists(pluginPath);
     }
 
