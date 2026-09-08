@@ -34,7 +34,6 @@ public partial class App : Application
             var manifestService = new ManifestService(downloader);
             var javaManager = new JavaManager();
             var serverManager = new ServerManager(downloader);
-            var pluginManager = new PluginManager(downloader);
             var vpnManager = new VpnManager(downloader);
             var minecraftLauncher = new MinecraftLauncher(javaManager);
             var updateManager = new UpdateManager(downloader);
@@ -45,7 +44,7 @@ public partial class App : Application
             var accountService = new LauncherAccountService();
 
             _mainViewModel = new MainViewModel(
-                manifestService, javaManager, serverManager, pluginManager,
+                manifestService, javaManager, serverManager,
                 vpnManager, minecraftLauncher, updateManager, gameInstaller, accountService);
 
             var mainWindow = new MainWindow { DataContext = _mainViewModel };

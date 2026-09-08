@@ -11,7 +11,6 @@ public partial class MainViewModel : ObservableObject
     private readonly ManifestService _manifestService;
     private readonly JavaManager _javaManager;
     private readonly ServerManager _serverManager;
-    private readonly PluginManager _pluginManager;
     private readonly VpnManager _vpnManager;
     private readonly MinecraftLauncher _minecraftLauncher;
     private readonly UpdateManager _updateManager;
@@ -33,7 +32,6 @@ public partial class MainViewModel : ObservableObject
         ManifestService manifestService,
         JavaManager javaManager,
         ServerManager serverManager,
-        PluginManager pluginManager,
         VpnManager vpnManager,
         MinecraftLauncher minecraftLauncher,
         UpdateManager updateManager,
@@ -43,7 +41,6 @@ public partial class MainViewModel : ObservableObject
         _manifestService = manifestService;
         _javaManager = javaManager;
         _serverManager = serverManager;
-        _pluginManager = pluginManager;
         _vpnManager = vpnManager;
         _minecraftLauncher = minecraftLauncher;
         _updateManager = updateManager;
@@ -93,16 +90,7 @@ public partial class MainViewModel : ObservableObject
                 CreateDownloadProgress(), CreateProgress());
             AppLogger.Log($"Game installed. Classpath entries={_installedGame.Classpath?.Count ?? 0}");
 
-            AppLogger.Log("Step 4: Downloading plugins...");
-            StatusMessage = "Descargando plugins...";
-            foreach (var plugin in Manifest.Plugins)
-            {
-                AppLogger.Log($"  Plugin: {plugin.FileName} from {plugin.DownloadUrl}");
-                await _pluginManager.DownloadPluginAsync(plugin, Manifest.ServerVersion, CreateDownloadProgress());
-                AppLogger.Log($"  Plugin {plugin.FileName} OK");
-            }
-
-            AppLogger.Log("Step 5: Checking VPN...");
+            AppLogger.Log("Step 4: Checking VPN...");
             StatusMessage = "Verificando VPN...";
             if (!_vpnManager.IsTailscaleInstalled())
             {
