@@ -11,16 +11,57 @@ public class VpnManager
 {
     private readonly HttpDownloader _downloader;
     private const string TailscaleDownloadUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe";
-    private static readonly string TailscaleInstallPath = Path.Combine(
+    private static readonly string TailscaleCustomPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "VerkkuCraft", "Tailscale", "tailscale.exe");
+
+    private static readonly string[] TailscaleSearchPaths =
+    [
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "Tailscale", "tailscale.exe"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Tailscale", "tailscale.exe"),
+        TailscaleCustomPath
+    ];
+
+    private static readonly Lazy<string?> TailscalePath = new(() =>
+    {
+        foreach (var path in TailscaleSearchPaths)
+        {
+            if (File.Exists(path))
+                return path;
+        }
+
+        // Check if tailscale is in PATH
+        try
+        {
+            var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "tailscale",
+                Arguments = "version",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            var output = process?.StandardOutput.ReadToEnd();
+            process?.WaitForExit();
+            if (process?.ExitCode == 0)
+                return "tailscale"; // Use PATH
+        }
+        catch { }
+
+        return null;
+    });
 
     public VpnManager(HttpDownloader downloader)
     {
         _downloader = downloader;
     }
 
-    public bool IsTailscaleInstalled() => File.Exists(TailscaleInstallPath);
+    public bool IsTailscaleInstalled() => TailscalePath.Value is not null;
+
+    private string GetTailscalePath()
+    {
+        return TailscalePath.Value ?? TailscaleCustomPath;
+    }
 
     public bool IsTailscaleConnected()
     {
@@ -28,7 +69,7 @@ public class VpnManager
         {
             var process = Process.Start(new ProcessStartInfo
             {
-                FileName = TailscaleInstallPath,
+                FileName = GetTailscalePath(),
                 Arguments = "status",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
@@ -51,9 +92,9 @@ public class VpnManager
     {
         var process = Process.Start(new ProcessStartInfo
         {
-            FileName = TailscaleInstallPath,
-            Arguments = "login",
-            UseShellExecute = true
+                FileName = GetTailscalePath(),
+                Arguments = "login",
+                UseShellExecute = true
         });
         await process!.WaitForExitAsync(cancellationToken);
     }
@@ -83,11 +124,11 @@ public class VpnManager
     {
         var process = Process.Start(new ProcessStartInfo
         {
-            FileName = TailscaleInstallPath,
-            Arguments = $"login --authkey={authKey}",
-            RedirectStandardOutput = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
+                FileName = GetTailscalePath(),
+                Arguments = $"login --authkey={authKey}",
+                RedirectStandardOutput = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
         });
 
         await process!.WaitForExitAsync(cancellationToken);
@@ -99,7 +140,7 @@ public class VpnManager
         {
             var process = Process.Start(new ProcessStartInfo
             {
-                FileName = TailscaleInstallPath,
+                FileName = GetTailscalePath(),
                 Arguments = "ip -4",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,

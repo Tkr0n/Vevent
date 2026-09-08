@@ -1,3 +1,4 @@
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VerkkuCraftLauncher.Helpers;
@@ -155,9 +156,14 @@ public partial class MainViewModel : ObservableObject
             Manifest.ServerVersion, Manifest.ClientMods,
             CreateDownloadProgress(), CreateProgress());
 
+        var gameDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "VerkkuCraft", "game", Manifest.ServerVersion);
+        Directory.CreateDirectory(gameDir);
+
         var launched = await _minecraftLauncher.LaunchMinecraftAsync(
             _installedGame,
-            _serverManager.GetServerDirectory(Manifest.ServerVersion),
+            gameDir,
             Username,
             Manifest.DefaultServerConfig.ServerAddress,
             Manifest.DefaultServerConfig.ServerPort,

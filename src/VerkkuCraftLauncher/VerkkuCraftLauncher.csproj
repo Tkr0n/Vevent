@@ -14,6 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Svg.Skia" Version="5.2.3" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="SharpCompress" Version="0.50.4" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
@@ -21,6 +22,9 @@
 
   <ItemGroup>
     <Resource Include="Assets\**" />
+    <Content Include="Assets\img\Verkkucraft-logo.svg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
