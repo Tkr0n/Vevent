@@ -10,7 +10,7 @@ public class ServerConfig
     public string GameMode { get; set; } = string.Empty;
     public bool OnlineMode { get; set; }
     public bool AllowFlight { get; set; }
-    public bool SpawnProtection { get; set; }
+    public int SpawnProtection { get; set; }
     public int ViewDistance { get; set; } = 10;
     public string Difficulty { get; set; } = string.Empty;
     public bool Whitelist { get; set; }
