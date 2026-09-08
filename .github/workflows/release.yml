@@ -33,8 +33,22 @@ jobs:
       - name: Build plugin
         run: gradle build -PpluginVersion="${GITHUB_REF_NAME#v}"
 
-      - name: Upload JAR to Release
+      - name: Inject secrets into manifest
+        if: env.TAILSCALE_AUTH_KEY != ''
+        run: |
+          python3 -c "
+          import json, os
+          with open('manifest.json', 'r') as f: data = json.load(f)
+          data['tailscaleAuthKey'] = os.environ['TAILSCALE_AUTH_KEY']
+          with open('manifest.json', 'w') as f: json.dump(data, f, indent=2)
+          "
+        env:
+          TAILSCALE_AUTH_KEY: ${{ secrets.TAILSCALE_AUTH_KEY }}
+
+      - name: Upload JAR and manifest to Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/*.jar
+          files: |
+            build/libs/*.jar
+            manifest.json
           generate_release_notes: true
