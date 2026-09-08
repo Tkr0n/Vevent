@@ -104,6 +104,14 @@ public partial class MainViewModel : ObservableObject
                 AppLogger.Log("Tailscale already installed");
             }
 
+            if (!_vpnManager.IsTailscaleConnected())
+            {
+                AppLogger.Log("Tailscale not connected, opening login...");
+                StatusMessage = "Abriendo Tailscale para iniciar sesión...";
+                await _vpnManager.OpenTailscaleLoginAsync();
+                AppLogger.Log("Tailscale login window opened");
+            }
+
             StatusMessage = "Todo listo. Presiona JUGAR para iniciar.";
             IsJugarEnabled = true;
             IsProgressIndeterminate = false;
@@ -122,6 +130,15 @@ public partial class MainViewModel : ObservableObject
         if (Manifest == null) return;
 
         IsJugarEnabled = false;
+        StatusMessage = "Verificando conexión VPN...";
+
+        if (!_vpnManager.IsTailscaleConnected())
+        {
+            StatusMessage = "Tailscale no está conectado. Abre Tailscale e inicia sesión.";
+            IsJugarEnabled = true;
+            return;
+        }
+
         StatusMessage = "Iniciando Minecraft...";
 
         _installedGame ??= await _gameInstaller.EnsureInstalledAsync(

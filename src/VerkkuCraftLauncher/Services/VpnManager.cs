@@ -38,13 +38,24 @@ public class VpnManager
             var output = process?.StandardOutput.ReadToEnd();
             process?.WaitForExit();
 
-            return output?.Contains("Connected") == true ||
-                   output?.Contains("Running") == true;
+            if (process?.ExitCode != 0) return false;
+            return output?.Contains("100.") == true;
         }
         catch
         {
             return false;
         }
+    }
+
+    public async Task OpenTailscaleLoginAsync(CancellationToken cancellationToken = default)
+    {
+        var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = TailscaleInstallPath,
+            Arguments = "login",
+            UseShellExecute = true
+        });
+        await process!.WaitForExitAsync(cancellationToken);
     }
 
     public async Task InstallTailscaleAsync(IProgress<DownloadProgress>? progress = null, CancellationToken cancellationToken = default)

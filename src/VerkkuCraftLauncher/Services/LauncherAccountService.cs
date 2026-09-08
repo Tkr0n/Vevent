@@ -1,5 +1,7 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace VerkkuCraftLauncher.Services;
 
@@ -10,7 +12,7 @@ public class LauncherAccountService
         // 1. Launcher oficial de Minecraft
         var official = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            ".minecraft", "launcher_accounts.json");
+            ".minecraft", "usernamecache.json");
         var name = ReadOfficialUsername(official);
         if (!string.IsNullOrEmpty(name)) return name;
 
@@ -26,13 +28,8 @@ public class LauncherAccountService
         try
         {
             if (!File.Exists(path)) return null;
-            using var doc = JsonDocument.Parse(File.ReadAllText(path));
-            var root = doc.RootElement;
-            if (!root.TryGetProperty("activeAccount", out var active)) return null;
-            var key = active.GetProperty("localId").GetString();
-            if (key == null) return null;
-            return root.GetProperty("accounts").GetProperty(key)
-                .GetProperty("minecraftProfile").GetProperty("name").GetString();
+            var dictionary = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path));
+            return dictionary?.FirstOrDefault().Value;
         }
         catch { return null; }
     }
