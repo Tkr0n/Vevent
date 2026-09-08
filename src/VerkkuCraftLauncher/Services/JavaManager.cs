@@ -14,8 +14,16 @@ public class JavaManager
     /// <summary>Minecraft 1.21.x requires Java 21+.</summary>
     public const int RequiredJavaMajor = 21;
 
-    private const string Temurin21JreUrl =
-        "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse";
+    /// <summary>
+    /// JRE 21 download sources, tried in order. First is the GitHub-hosted
+    /// Adoptium asset (same CDN as the rest of our dependencies); second is
+    /// the Adoptium API which always resolves to the newest GA build.
+    /// </summary>
+    private static readonly string[] Temurin21JreUrls =
+    [
+        "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_windows_hotspot_21.0.12.1_1.zip",
+        "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse"
+    ];
 
     private static readonly string ManagedJavaDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -109,10 +117,32 @@ public class JavaManager
         progress?.Report(new DownloadProgress(0, "Descargando Java 21..."));
 
         var zipPath = Path.Combine(Path.GetTempPath(), "temurin21-jre.zip");
-        await _downloader.DownloadFileAsync(
-            Temurin21JreUrl, zipPath,
-            new Progress<int>(p => progress?.Report(new DownloadProgress(p, "Descargando Java 21..."))),
-            cancellationToken);
+        var downloaded = false;
+        Exception? lastError = null;
+        foreach (var url in Temurin21JreUrls)
+        {
+            try
+            {
+                AppLogger.Log($"Trying Java 21 source: {url}");
+                await _downloader.DownloadFileAsync(
+                    url, zipPath,
+                    new Progress<int>(p => progress?.Report(new DownloadProgress(p, "Descargando Java 21..."))),
+                    cancellationToken);
+                downloaded = true;
+                break;
+            }
+            catch (Exception ex)
+            {
+                lastError = ex;
+                AppLogger.Log($"Java 21 source failed, trying next: {ex.Message}");
+            }
+        }
+
+        if (!downloaded)
+            throw new InvalidOperationException(
+                "No se pudo descargar Java 21 automáticamente. " +
+                "Descárgalo manualmente desde https://adoptium.net/ y reinicia el launcher.",
+                lastError);
 
         progress?.Report(new DownloadProgress(100, "Instalando Java 21..."));
         await Task.Run(() =>

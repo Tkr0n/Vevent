@@ -8,6 +8,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.multiplayer.ConnectScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.network.CookieStorage;
 import net.minecraft.client.network.ServerAddress;
 import net.minecraft.client.network.ServerInfo;
 import net.minecraft.text.Text;
@@ -20,6 +21,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 @Mixin(TitleScreen.class)
@@ -29,10 +31,11 @@ public abstract class TitleScreenMixin extends Screen {
         super(title);
     }
 
-    private static final Identifier LOGO_TEXTURE = new Identifier("verkku", "textures/title/logo.png");
+    private static final Identifier LOGO_TEXTURE = Identifier.of("verkku", "textures/title/logo.png");
 
     @Redirect(
         method = "render",
+        require = 0,
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/gui/LogoDrawer;draw(Lnet/minecraft/client/gui/DrawContext;IF)V"
@@ -43,6 +46,7 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Redirect(
         method = "render",
+        require = 0,
         at = @At(
             value = "INVOKE",
             target = "Lnet/minecraft/client/gui/LogoDrawer;draw(Lnet/minecraft/client/gui/DrawContext;IFI)V"
@@ -84,7 +88,7 @@ public abstract class TitleScreenMixin extends Screen {
         try {
             ServerAddress address = new ServerAddress(VerkkuTitleMod.SERVER_ADDRESS, VerkkuTitleMod.SERVER_PORT);
             ServerInfo info = new ServerInfo("VerkkuCraft", address.toString(), ServerInfo.ServerType.OTHER);
-            ConnectScreen.connect((Screen) (Object) this, client, address, info, false);
+            ConnectScreen.connect((Screen) (Object) this, client, address, info, false, new CookieStorage(new HashMap<>()));
         } catch (Exception e) {
             VerkkuTitleMod.LOGGER.error("Failed to connect: {}", e.getMessage(), e);
         }
@@ -95,6 +99,6 @@ public abstract class TitleScreenMixin extends Screen {
         TitleScreen screen = (TitleScreen) (Object) this;
         int logoWidth = 256;
         int logoHeight = 80;
-        context.drawTexture(LOGO_TEXTURE, (screen.width - logoWidth) / 2, 30, 0, 0, logoWidth, logoHeight, logoWidth, logoHeight);
+        context.drawTexture(LOGO_TEXTURE, (screen.width - logoWidth) / 2, 30, logoWidth, logoHeight, 0.0F, 0.0F, logoWidth, logoHeight, logoWidth, logoHeight);
     }
 }
