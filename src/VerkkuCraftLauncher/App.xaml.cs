@@ -32,7 +32,7 @@ public partial class App : Application
             var downloader = new HttpDownloader();
             var extractor = new FileExtractor();
             var manifestService = new ManifestService(downloader);
-            var javaManager = new JavaManager();
+            var javaManager = new JavaManager(downloader);
             var serverManager = new ServerManager(downloader);
             var vpnManager = new VpnManager(downloader);
             var minecraftLauncher = new MinecraftLauncher(javaManager);

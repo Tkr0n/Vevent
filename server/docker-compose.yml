@@ -1,24 +1,61 @@
-# Servidor Minecraft VerkkuCraft (Paper 1.20.4) para Raspberry Pi.
-# Uso en la RPi: clonar el repo, copiar .env.example a .env y ajustar,
-# luego: docker compose up -d
+# Servidor Minecraft VerkkuCraft (Fabric 1.21.1) para Raspberry Pi.
+# Uso en la RPi: copiar este archivo a /mc-server/docker-compose.yaml y luego:
+#   cd /mc-server && sudo docker compose down && sudo docker compose up -d
+# Los mods se descargan automáticamente de Modrinth (misma lista que el launcher).
+# NOTA: enhanced-ai y majruszs-progressive-difficulty NO están incluidos:
+#   enhanced-ai es solo Forge/NeoForge y majruszs no tiene versión 1.21.1.
 services:
   mc:
-    image: itzg/minecraft-server:latest
-    container_name: mc
+    image: itzg/minecraft-server:java21
+    container_name: mc-fabric
     restart: unless-stopped
     ports:
-      - "25565:25565" # Minecraft TCP en tu RPi
-      - "24454:24454/udp" # Simple Voice Chat UDP (solo funciona vía Tailscale, no por Cloudflare Tunnel)
+      - "25565:25565" # Minecraft TCP (solo vía Tailscale, no por Cloudflare Tunnel)
+      - "24454:24454/udp" # Simple Voice Chat UDP (solo vía Tailscale)
     environment:
       EULA: "TRUE"
-      TYPE: "PAPER"          # "VANILLA" O cambia a "PAPER" si quieres un extra de rendimiento
-      VERSION: "1.20.4"      # Fijado a 1.20.4 para coincidir con el plugin vEventDrops y el launcher
-      MEMORY: "6G"             # Ajusta según la RAM de tu RPi (ej. 2G, 3G, 4G)
-      MAX_PLAYERS: "15"
-      ENABLE_AUTOPAUSE: "TRUE" # Pausa el proceso si no hay nadie conectado para no sobrecargar la RPi
-      ONLINE_MODE: "FALSE"
-      PLUGINS: "https://github.com/SkinsRestorer/SkinsRestorer/releases/latest/download/SkinsRestorer.jar, https://cdn.modrinth.com/data/lDAFcnRN/versions/vsRfbexG/BackpackPlus-3.2.0-all.jar, https://cdn.modrinth.com/data/9eGKb6K1/versions/62MVmInV/voicechat-bukkit-2.6.21.jar, https://cdn.modrinth.com/data/cE9CA2Px/versions/D09ywbLZ/DeathCoords.jar, https://cdn.modrinth.com/data/52W2RPUh/versions/Bc7hzkik/timber-1.8.4.jar?mr_download_reason=standalone, https://github.com/Tkr0n/Vevent/releases/download/v1.0.0/vEventDrops-1.0.0.jar, https://cdn.modrinth.com/data/vCFaodCy/versions/JpbCUK5u/GravesX-2026.4.9.1.jar?mr_download_reason=standalone, https://cdn.modrinth.com/data/eMlTUU6r/versions/kw2jPVBf/ReanimateMC-1.2.13.jar?mr_download_reason=standalone"
+      TYPE: "FABRIC"
+      VERSION: "1.21.1" # Fijado a 1.21.1 para coincidir con el launcher
+      MEMORY: "8G" # Ajusta según la RAM de tu RPi
+      USE_AIKAR_FLAGS: "true"
+      OPS: "T3kr0n"
       ENABLE_RCON: "true"
-      RCON_PASSWORD: "${RCON_PASSWORD:-saydenier}" # Se lee de server/.env (ver .env.example)
+      RCON_PASSWORD: "saydenier"
+      MODRINTH_PROJECTS: |
+        fabric-api
+        lithium
+        ferrite-core
+        krypton
+        chunky
+        simple-voice-chat
+        luckperms
+        travelersbackpack
+        cardinal-components-api
+        lootr
+        when-dungeons-arise
+        yungs-better-dungeons
+        yungs-better-strongholds
+        yungs-better-mineshafts
+        yigd
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     volumes:
-      - ./mc-data:/data
+      - ./data:/data
+
+  backup:
+    image: itzg/mc-backup:latest
+    container_name: mc-backup
+    restart: unless-stopped
+    depends_on:
+      - mc
+    environment:
+      RCON_HOST: mc
+      RCON_PASSWORD: "saydenier"
+      BACKUP_INTERVAL: "6h"
+      INITIAL_DELAY: "5m"
+      PRUNE_BACKUPS_DAYS: "7"
+      EXCLUDES: "*.jar,cache,logs"
+    volumes:
+      - ./data:/data:ro # Solo lectura sobre los datos del servidor
+      - ./backups:/backups # Directorio local donde se almacenarán los .tar.gz

@@ -21,6 +21,7 @@ public class MinecraftLauncher
         string username,
         string serverAddress,
         int serverPort,
+        string mcVersion,
         IProgress<string>? statusProgress = null,
         CancellationToken cancellationToken = default)
     {
@@ -31,7 +32,7 @@ public class MinecraftLauncher
             return false;
         }
 
-        var arguments = BuildJvmArguments(game, gameDirectory, username, serverAddress, serverPort);
+        var arguments = BuildJvmArguments(game, gameDirectory, username, serverAddress, serverPort, mcVersion);
 
         statusProgress?.Report("Iniciando Minecraft...");
 
@@ -53,7 +54,7 @@ public class MinecraftLauncher
         return true;
     }
 
-    private string BuildJvmArguments(InstalledGame game, string gameDir, string username, string server, int port)
+    private string BuildJvmArguments(InstalledGame game, string gameDir, string username, string server, int port, string mcVersion)
     {
         var uuid = GenerateOfflineUuid(username);
         var cp = string.Join(Path.PathSeparator, game.Classpath);
@@ -62,8 +63,8 @@ public class MinecraftLauncher
                $"-Djava.library.path=\"{game.NativesDir}\" " +
                $"-cp \"{cp}\" " +
                $"{game.MainClass} " +
-               $"--username {username} " +
-               $"--version 1.20.4 " +
+                $"--username {username} " +
+               $"--version {mcVersion} " +
                $"--gameDir \"{gameDir}\" " +
                $"--assetsDir \"{game.AssetsDir}\" " +
                $"--assetIndex {game.AssetIndexId} " +

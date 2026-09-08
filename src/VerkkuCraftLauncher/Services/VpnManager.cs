@@ -125,7 +125,7 @@ public class VpnManager
         var process = Process.Start(new ProcessStartInfo
         {
                 FileName = GetTailscalePath(),
-                Arguments = $"login --authkey={authKey}",
+                Arguments = $"login --authkey={authKey} --advertise-tags=tag:client",
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
                 CreateNoWindow = true

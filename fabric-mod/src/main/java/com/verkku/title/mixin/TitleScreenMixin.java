@@ -1,9 +1,10 @@
 package com.verkku.title.mixin;
 
 import com.verkku.title.VerkkuTitleMod;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
+import net.minecraft.client.gui.LogoDrawer;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.multiplayer.ConnectScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -12,24 +13,43 @@ import net.minecraft.client.network.ServerInfo;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Mixin(TitleScreen.class)
-public abstract class TitleScreenMixin {
+public abstract class TitleScreenMixin extends Screen {
 
-    @Shadow protected MinecraftClient client;
-
-    @Shadow protected abstract void remove(Element element);
-
-    @Shadow public abstract Element addDrawableChild(Element element);
+    protected TitleScreenMixin(Text title) {
+        super(title);
+    }
 
     private static final Identifier LOGO_TEXTURE = new Identifier("verkku", "textures/title/logo.png");
+
+    @Redirect(
+        method = "render",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/LogoDrawer;draw(Lnet/minecraft/client/gui/DrawContext;IF)V"
+        )
+    )
+    private void verkku$redirectLogo(LogoDrawer instance, DrawContext context, int width, float alpha) {
+    }
+
+    @Redirect(
+        method = "render",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/client/gui/LogoDrawer;draw(Lnet/minecraft/client/gui/DrawContext;IFI)V"
+        )
+    )
+    private void verkku$redirectLogoWithY(LogoDrawer instance, DrawContext context, int width, float alpha, int y) {
+    }
 
     @Inject(method = "init", at = @At("TAIL"))
     private void verkku$modifyTitleScreen(CallbackInfo ci) {
@@ -37,7 +57,6 @@ public abstract class TitleScreenMixin {
         int centerX = screen.width / 2;
         int buttonY = screen.height / 2 + 20;
 
-        // Collect buttons to remove (can't modify list while iterating)
         List<Element> toRemove = new ArrayList<>();
         for (Element element : screen.children()) {
             if (element instanceof ButtonWidget button) {
@@ -50,24 +69,29 @@ public abstract class TitleScreenMixin {
             }
         }
         for (Element element : toRemove) {
-            remove(element);
+            this.remove(element);
         }
 
-        // Add connect button
-        addDrawableChild(ButtonWidget.builder(
+        this.addDrawableChild(ButtonWidget.builder(
                 Text.literal("Conectar"),
-                button -> {
-                    VerkkuTitleMod.LOGGER.info("Connecting to {}:{}", VerkkuTitleMod.SERVER_ADDRESS, VerkkuTitleMod.SERVER_PORT);
-                    ServerAddress address = new ServerAddress(VerkkuTitleMod.SERVER_ADDRESS, VerkkuTitleMod.SERVER_PORT);
-                    ServerInfo info = new ServerInfo("VerkkuCraft", VerkkuTitleMod.SERVER_ADDRESS, ServerInfo.ServerType.OTHER);
-                    client.setScreen(null);
-                    ConnectScreen.connect(screen, client, address, info, false);
-                }
+                button -> connectToServer()
         ).dimensions(centerX - 100, buttonY, 200, 20).build());
     }
 
-    @Inject(method = "render", at = @At("HEAD"))
-    private void verkku$render(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
+    @Unique
+    private void connectToServer() {
+        VerkkuTitleMod.LOGGER.info("Connecting to {}:{}", VerkkuTitleMod.SERVER_ADDRESS, VerkkuTitleMod.SERVER_PORT);
+        try {
+            ServerAddress address = new ServerAddress(VerkkuTitleMod.SERVER_ADDRESS, VerkkuTitleMod.SERVER_PORT);
+            ServerInfo info = new ServerInfo("VerkkuCraft", address.toString(), ServerInfo.ServerType.OTHER);
+            ConnectScreen.connect((Screen) (Object) this, client, address, info, false);
+        } catch (Exception e) {
+            VerkkuTitleMod.LOGGER.error("Failed to connect: {}", e.getMessage(), e);
+        }
+    }
+
+    @Inject(method = "render", at = @At("RETURN"))
+    private void verkku$renderLogo(DrawContext context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         TitleScreen screen = (TitleScreen) (Object) this;
         int logoWidth = 256;
         int logoHeight = 80;

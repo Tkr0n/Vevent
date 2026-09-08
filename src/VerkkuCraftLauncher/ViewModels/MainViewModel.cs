@@ -138,49 +138,75 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task JugarAsync()
     {
-        if (Manifest == null) return;
-
-        IsJugarEnabled = false;
-        StatusMessage = "Verificando conexión VPN...";
-
-        if (!_vpnManager.IsTailscaleConnected())
+        try
         {
-            StatusMessage = "Tailscale no está conectado. Abre Tailscale e inicia sesión.";
+            AppLogger.Log("JugarAsync started");
+            if (Manifest == null)
+            {
+                AppLogger.Log("Manifest is null, aborting");
+                return;
+            }
+
+            IsJugarEnabled = false;
+            StatusMessage = "Verificando conexión VPN...";
+
+            var vpnOk = _vpnManager.IsTailscaleConnected();
+            AppLogger.Log($"Tailscale connected: {vpnOk}");
+
+            if (!vpnOk)
+            {
+                AppLogger.Log("Tailscale not connected, aborting");
+                StatusMessage = "Tailscale no está conectado. Abre Tailscale e inicia sesión.";
+                IsJugarEnabled = true;
+                return;
+            }
+
+            StatusMessage = "Iniciando Minecraft...";
+            AppLogger.Log("Ensuring game installed...");
+
+            _installedGame ??= await _gameInstaller.EnsureInstalledAsync(
+                Manifest.ServerVersion, Manifest.ClientMods,
+                CreateDownloadProgress(), CreateProgress());
+
+            AppLogger.Log($"Classpath: {_installedGame.Classpath?.Count ?? 0} entries");
+
+            var gameDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "VerkkuCraft", "game", Manifest.ServerVersion);
+            Directory.CreateDirectory(gameDir);
+            AppLogger.Log($"gameDir: {gameDir}");
+            AppLogger.Log($"Java: {_javaManager.GetJavaPath(null)}");
+
+            var launched = await _minecraftLauncher.LaunchMinecraftAsync(
+                _installedGame,
+                gameDir,
+                Username,
+                Manifest.DefaultServerConfig.ServerAddress,
+                Manifest.DefaultServerConfig.ServerPort,
+                Manifest.ServerVersion,
+                CreateStringProgress());
+
+            AppLogger.Log($"LaunchAsync returned: {launched}");
+
+            if (launched)
+            {
+                StatusMessage = "Listo para jugar";
+                ProgressValue = 0;
+                DownloadPercent = 0;
+                DownloadDetail = string.Empty;
+                IsProgressIndeterminate = false;
+            }
+            else
+                StatusMessage = "Error al iniciar Minecraft";
+
             IsJugarEnabled = true;
-            return;
         }
-
-        StatusMessage = "Iniciando Minecraft...";
-
-        _installedGame ??= await _gameInstaller.EnsureInstalledAsync(
-            Manifest.ServerVersion, Manifest.ClientMods,
-            CreateDownloadProgress(), CreateProgress());
-
-        var gameDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "VerkkuCraft", "game", Manifest.ServerVersion);
-        Directory.CreateDirectory(gameDir);
-
-        var launched = await _minecraftLauncher.LaunchMinecraftAsync(
-            _installedGame,
-            gameDir,
-            Username,
-            Manifest.DefaultServerConfig.ServerAddress,
-            Manifest.DefaultServerConfig.ServerPort,
-            CreateStringProgress());
-
-        if (launched)
+        catch (Exception ex)
         {
-            StatusMessage = "Listo para jugar";
-            ProgressValue = 0;
-            DownloadPercent = 0;
-            DownloadDetail = string.Empty;
-            IsProgressIndeterminate = false;
+            AppLogger.LogError("JugarAsync", ex);
+            StatusMessage = $"Error: {ex.Message}";
+            IsJugarEnabled = true;
         }
-        else
-            StatusMessage = "Error al iniciar Minecraft";
-
-        IsJugarEnabled = true;
     }
 
     private IProgress<int> CreateProgress() => new Progress<int>(percent =>
