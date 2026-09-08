@@ -6,7 +6,7 @@
         xmlns:converters="clr-namespace:VerkkuCraftLauncher.Converters"
         Title="VerkkuCraft Launcher" 
         Icon="/Assets/img/icon.jpg"
-        Width="700" Height="500"
+        Width="700" Height="650"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#1a1a2e"
@@ -61,8 +61,7 @@
 
             <!-- Logo -->
             <Image Grid.Row="0" 
-                            Source="{Binding Source='Assets/img/Verkkucraft-logo.svg', Converter={StaticResource SvgImageSourceConverter}}"
-                   Height="80" 
+                   Source="/Assets/img/banner.jpg"
                    HorizontalAlignment="Center"
                    Margin="0,10,0,20"
                    RenderOptions.BitmapScalingMode="HighQuality"/>

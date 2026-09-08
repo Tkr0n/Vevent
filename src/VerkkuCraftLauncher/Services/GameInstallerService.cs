@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net.Http;
 using VerkkuCraftLauncher.Models;
 
 namespace VerkkuCraftLauncher.Services;
@@ -37,9 +38,25 @@ public class GameInstallerService
         var fabricLibs = await _fabric.DownloadLibrariesAsync(
             fabric, Path.Combine(baseDir, "libraries"), progress, ct);
         progress?.Report(new DownloadProgress(97, "Descargando mods..."));
-        var modsDir = Path.Combine(baseDir, "mods");
+        var modsDir = Path.Combine(baseDir, "game", mcVersion, "mods");
         foreach (var mod in mods)
-            await _modrinth.DownloadModAsync(mod.ModrinthProjectId, mcVersion, "fabric", modsDir, ct);
+        {
+            if (!string.IsNullOrEmpty(mod.DownloadUrl) && string.IsNullOrEmpty(mod.ModrinthProjectId))
+            {
+                var destPath = Path.Combine(modsDir, string.IsNullOrEmpty(mod.FileName) ? Path.GetFileName(new Uri(mod.DownloadUrl).AbsolutePath) : mod.FileName);
+                if (!File.Exists(destPath))
+                {
+                    Directory.CreateDirectory(modsDir);
+                    using var http = new HttpClient();
+                    var bytes = await http.GetByteArrayAsync(mod.DownloadUrl, ct);
+                    await File.WriteAllBytesAsync(destPath, bytes, ct);
+                }
+            }
+            else if (!string.IsNullOrEmpty(mod.ModrinthProjectId))
+            {
+                await _modrinth.DownloadModAsync(mod.ModrinthProjectId, mcVersion, "fabric", modsDir, ct);
+            }
+        }
         progress?.Report(new DownloadProgress(100, "Instalación completa"));
         return new InstalledGame
         {

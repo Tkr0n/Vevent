@@ -28,4 +28,6 @@ public class ClientModInfo
     public string Name { get; set; } = string.Empty;
     public string ModrinthProjectId { get; set; } = string.Empty;
     public string Version { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string DownloadUrl { get; set; } = string.Empty;
 }

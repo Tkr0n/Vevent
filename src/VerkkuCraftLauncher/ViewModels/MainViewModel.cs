@@ -170,7 +170,13 @@ public partial class MainViewModel : ObservableObject
             CreateStringProgress());
 
         if (launched)
-            StatusMessage = "Minecraft iniciado. ¡Diviértete!";
+        {
+            StatusMessage = "Listo para jugar";
+            ProgressValue = 0;
+            DownloadPercent = 0;
+            DownloadDetail = string.Empty;
+            IsProgressIndeterminate = false;
+        }
         else
             StatusMessage = "Error al iniciar Minecraft";
 

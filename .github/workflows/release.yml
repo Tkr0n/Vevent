@@ -33,6 +33,10 @@ jobs:
       - name: Build plugin
         run: gradle build -PpluginVersion="${GITHUB_REF_NAME#v}"
 
+      - name: Build Fabric title mod
+        working-directory: fabric-mod
+        run: gradle build
+
       - name: Inject secrets into manifest
         if: env.TAILSCALE_AUTH_KEY != ''
         run: |
@@ -50,5 +54,6 @@ jobs:
         with:
           files: |
             build/libs/*.jar
+            fabric-mod/build/libs/*.jar
             manifest.json
           generate_release_notes: true

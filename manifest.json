@@ -32,9 +32,18 @@
   ],
   "clientMods": [
     {
+      "name": "VerkkuCraft Title Screen",
+      "modrinthProjectId": "",
+      "version": "1.0.0",
+      "fileName": "verkku-title-1.0.0.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.1.1/verkku-title-1.0.0.jar"
+    },
+    {
       "name": "Simple Voice Chat",
       "modrinthProjectId": "9eGKb6K1",
-      "version": "2.6.21"
+      "version": "2.6.21",
+      "fileName": "",
+      "downloadUrl": ""
     }
   ],
   "tailscaleAuthKey": "",
