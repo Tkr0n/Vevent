@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using VerkkuCraftLauncher.Helpers;
 using VerkkuCraftLauncher.Models;
 using VerkkuCraftLauncher.Services;
 
@@ -52,20 +53,24 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
+            AppLogger.Log("Step 0: Detecting username...");
             Username = _accountService.DetectUsername() ?? string.Empty;
+            AppLogger.Log($"Username: '{Username}'");
 
+            AppLogger.Log("Step 1: Fetching manifest...");
             StatusMessage = "Obteniendo manifiesto...";
             Manifest = await _manifestService.FetchManifestAsync();
             
             if (Manifest == null)
             {
                 StatusMessage = "Error al obtener manifiesto";
+                AppLogger.Log("ERROR: Manifest is null");
                 return;
             }
+            AppLogger.Log($"Manifest OK. ServerVersion={Manifest.ServerVersion}, Plugins={Manifest.Plugins.Count}, ClientMods={Manifest.ClientMods.Count}");
 
             IsProgressIndeterminate = false;
 
-            // Check for launcher updates
             if (await _updateManager.CheckForUpdateAsync(Manifest.LauncherVersion))
             {
                 StatusMessage = "Actualización disponible";
@@ -74,35 +79,47 @@ public partial class MainViewModel : ObservableObject
                 return;
             }
 
-            // Ensure Java is installed
+            AppLogger.Log("Step 2: Ensuring Java...");
             StatusMessage = "Verificando Java...";
             await _javaManager.EnsureJavaInstalledAsync();
+            AppLogger.Log("Java OK");
 
-            // Install game client + Fabric + mods
+            AppLogger.Log("Step 3: Installing game + Fabric + mods...");
             StatusMessage = "Instalando juego y mods...";
             _installedGame = await _gameInstaller.EnsureInstalledAsync(Manifest.ServerVersion, Manifest.ClientMods, CreateStringProgress(), CreateProgress());
+            AppLogger.Log($"Game installed. Classpath entries={_installedGame.Classpath?.Count ?? 0}");
 
-            // Download plugins
+            AppLogger.Log("Step 4: Downloading plugins...");
             StatusMessage = "Descargando plugins...";
             foreach (var plugin in Manifest.Plugins)
             {
+                AppLogger.Log($"  Plugin: {plugin.FileName} from {plugin.DownloadUrl}");
                 await _pluginManager.DownloadPluginAsync(plugin, Manifest.ServerVersion, CreateProgress());
+                AppLogger.Log($"  Plugin {plugin.FileName} OK");
             }
 
-            // Check VPN
+            AppLogger.Log("Step 5: Checking VPN...");
             StatusMessage = "Verificando VPN...";
             if (!_vpnManager.IsTailscaleInstalled())
             {
+                AppLogger.Log("Tailscale not found, installing...");
                 StatusMessage = "Instalando Tailscale...";
                 await _vpnManager.InstallTailscaleAsync(CreateProgress());
+                AppLogger.Log("Tailscale install complete");
+            }
+            else
+            {
+                AppLogger.Log("Tailscale already installed");
             }
 
             StatusMessage = "Todo listo. Presiona JUGAR para iniciar.";
             IsJugarEnabled = true;
             IsProgressIndeterminate = false;
+            AppLogger.Log("Initialization complete!");
         }
         catch (Exception ex)
         {
+            AppLogger.LogError("InitializeAsync", ex);
             StatusMessage = $"Error: {ex.Message}";
         }
     }
