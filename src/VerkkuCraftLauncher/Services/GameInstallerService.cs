@@ -51,6 +51,20 @@ public class GameInstallerService
                     var bytes = await http.GetByteArrayAsync(mod.DownloadUrl, ct);
                     await File.WriteAllBytesAsync(destPath, bytes, ct);
                 }
+                // Nuestro mod cambia de nombre con cada versión (verkku-title-<ver>.jar):
+                // borrar copias viejas para que Fabric no cargue el jar obsoleto junto al nuevo.
+                var wanted = Path.GetFileName(destPath);
+                if (wanted.StartsWith("verkku-title-", StringComparison.OrdinalIgnoreCase)
+                    && Directory.Exists(modsDir))
+                {
+                    foreach (var stale in Directory.GetFiles(modsDir, "verkku-title-*.jar"))
+                    {
+                        if (!string.Equals(Path.GetFileName(stale), wanted, StringComparison.OrdinalIgnoreCase))
+                        {
+                            try { File.Delete(stale); } catch { }
+                        }
+                    }
+                }
             }
             else if (!string.IsNullOrEmpty(mod.ModrinthProjectId))
             {
