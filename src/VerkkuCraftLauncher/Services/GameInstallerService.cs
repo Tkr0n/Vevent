@@ -23,23 +23,24 @@ public class GameInstallerService
 
     public async Task<InstalledGame> EnsureInstalledAsync(
         string mcVersion, List<ClientModInfo> mods,
-        IProgress<string>? status = null, IProgress<int>? progress = null,
+        IProgress<DownloadProgress>? progress = null, IProgress<int>? percentProgress = null,
         CancellationToken ct = default)
     {
         var baseDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VerkkuCraft");
-        status?.Report("Resolviendo cliente de Minecraft...");
+        progress?.Report(new DownloadProgress(0, "Resolviendo cliente de Minecraft..."));
         var info = await _mojang.ResolveAsync(mcVersion, ct);
-        status?.Report("Descargando cliente y librerías...");
+        progress?.Report(new DownloadProgress(5, "Descargando cliente y librerías..."));
         var files = await _mojang.DownloadGameAsync(info, baseDir, progress, ct);
-        status?.Report("Instalando Fabric...");
+        progress?.Report(new DownloadProgress(92, "Instalando Fabric..."));
         var fabric = await _fabric.ResolveAsync(mcVersion, ct);
         var fabricLibs = await _fabric.DownloadLibrariesAsync(
             fabric, Path.Combine(baseDir, "libraries"), ct);
-        status?.Report("Descargando mods...");
+        progress?.Report(new DownloadProgress(97, "Descargando mods..."));
         var modsDir = Path.Combine(baseDir, "mods");
         foreach (var mod in mods)
             await _modrinth.DownloadModAsync(mod.ModrinthProjectId, mcVersion, "fabric", modsDir, ct);
+        progress?.Report(new DownloadProgress(100, "Instalación completa"));
         return new InstalledGame
         {
             Classpath = files.Classpath.Concat(fabricLibs).ToList(),

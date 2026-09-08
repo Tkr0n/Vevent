@@ -13,7 +13,7 @@ public class FileExtractor
     {
         await Task.Run(() =>
         {
-            using (var archive = ArchiveFactory.Open(archivePath))
+            using (var archive = ArchiveFactory.OpenArchive(archivePath))
             {
                 var totalEntries = archive.Entries.Count();
                 var extractedCount = 0;

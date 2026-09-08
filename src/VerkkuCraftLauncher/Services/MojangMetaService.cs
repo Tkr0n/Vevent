@@ -69,7 +69,7 @@ public class MojangMetaService
 
     public async Task<GameFiles> DownloadGameAsync(
         MojangVersionInfo info, string baseDir,
-        IProgress<int>? progress = null, CancellationToken ct = default)
+        IProgress<DownloadProgress>? progress = null, CancellationToken ct = default)
     {
         var versionDir = Path.Combine(baseDir, "versions", info.Id);
         var libsDir = Path.Combine(baseDir, "libraries");
@@ -81,13 +81,18 @@ public class MojangMetaService
 
         var clientJar = Path.Combine(versionDir, $"{info.Id}.jar");
         if (!File.Exists(clientJar))
-            await _downloader.DownloadFileAsync(info.ClientJarUrl, clientJar, null, ct);
+        {
+            progress?.Report(new DownloadProgress(0, $"Descargando cliente {info.Id}.jar..."));
+            await _downloader.DownloadFileAsync(info.ClientJarUrl, clientJar,
+                new Progress<int>(p => progress?.Report(new DownloadProgress(p, $"Descargando cliente {info.Id}.jar..."))), ct);
+        }
 
         var classpath = new List<string> { clientJar };
         var allowed = info.Libraries.Where(IsAllowedOnWindows).ToList();
         int done = 0;
         foreach (var lib in allowed)
         {
+            var libShortName = lib.Name.Split('/').Last();
             string? classifier = null;
             if (lib.Natives != null && lib.Natives.TryGetValue("windows", out var nat))
                 classifier = nat.Replace("${arch}", "64");
@@ -95,7 +100,10 @@ public class MojangMetaService
                 lib.Downloads_Classifiers.TryGetValue(classifier, out var natArt))
             {
                 var tmp = Path.Combine(Path.GetTempPath(), Path.GetFileName(natArt.Path));
-                if (!File.Exists(tmp)) await _downloader.DownloadFileAsync(natArt.Url, tmp, null, ct);
+                var pct = done * 100 / allowed.Count;
+                progress?.Report(new DownloadProgress(pct, $"Descargando natives {libShortName}..."));
+                if (!File.Exists(tmp)) await _downloader.DownloadFileAsync(natArt.Url, tmp,
+                    new Progress<int>(p => progress?.Report(new DownloadProgress(pct + p / allowed.Count, $"Descargando natives {libShortName}..."))), ct);
                 System.IO.Compression.ZipFile.ExtractToDirectory(tmp, nativesDir, overwriteFiles: true);
             }
             else if (lib.Downloads_Artifact != null)
@@ -103,28 +111,38 @@ public class MojangMetaService
                 var dest = Path.Combine(libsDir, lib.Downloads_Artifact.Path.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
                 if (!File.Exists(dest))
-                    await _downloader.DownloadFileAsync(lib.Downloads_Artifact.Url, dest, null, ct);
+                {
+                    var pct = done * 100 / allowed.Count;
+                    progress?.Report(new DownloadProgress(pct, $"Descargando lib {libShortName}..."));
+                    await _downloader.DownloadFileAsync(lib.Downloads_Artifact.Url, dest,
+                        new Progress<int>(p => progress?.Report(new DownloadProgress(pct + p / allowed.Count, $"Descargando lib {libShortName}..."))), ct);
+                }
                 classpath.Add(dest);
             }
             done++;
-            progress?.Report(done * 100 / allowed.Count);
         }
 
-        // Assets: índice + objetos referenciados
+        progress?.Report(new DownloadProgress(90, "Descargando assets..."));
         var indexPath = Path.Combine(assetsDir, "indexes", $"{info.AssetIndexId}.json");
         Directory.CreateDirectory(Path.GetDirectoryName(indexPath)!);
         if (!File.Exists(indexPath))
             await _downloader.DownloadFileAsync(info.AssetIndexUrl, indexPath, null, ct);
         using var index = JsonDocument.Parse(await File.ReadAllTextAsync(indexPath, ct));
-        foreach (var obj in index.RootElement.GetProperty("objects").EnumerateObject())
+        var objects = index.RootElement.GetProperty("objects").EnumerateObject().ToList();
+        int assetDone = 0;
+        foreach (var obj in objects)
         {
             var hash = obj.Value.GetProperty("hash").GetString()!;
             var dest = Path.Combine(assetsDir, "objects", hash[..2], hash);
-            if (File.Exists(dest)) continue;
+            if (File.Exists(dest)) { assetDone++; continue; }
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+            var pct = 90 + assetDone * 10 / Math.Max(objects.Count, 1);
+            progress?.Report(new DownloadProgress(pct, $"Descargando asset {obj.Name}..."));
             await _downloader.DownloadFileAsync(
                 $"https://resources.download.minecraft.net/{hash[..2]}/{hash}", dest, null, ct);
+            assetDone++;
         }
+        progress?.Report(new DownloadProgress(100, "Cliente descargado"));
 
         return new GameFiles { Classpath = classpath, NativesDir = nativesDir, AssetsDir = assetsDir };
     }

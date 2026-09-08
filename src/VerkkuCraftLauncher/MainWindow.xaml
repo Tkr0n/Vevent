@@ -53,6 +53,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Logo -->
@@ -73,8 +74,21 @@
                    TextWrapping="Wrap"
                    Margin="0,0,0,10"/>
 
+        <!-- Progress Bar + Detail -->
+        <StackPanel Grid.Row="2" Margin="0,10,0,0">
+            <ProgressBar Value="{Binding DownloadPercent}" Height="6" Margin="0,0,0,6"
+                         IsIndeterminate="{Binding IsProgressIndeterminate}"
+                         Maximum="100" Foreground="#4fc3f7" Background="#1a3a5c"/>
+            <TextBlock Text="{Binding DownloadDetail}"
+                       FontSize="11"
+                       Foreground="#666"
+                       HorizontalAlignment="Center"
+                       TextWrapping="Wrap"
+                       TextTrimming="CharacterEllipsis"/>
+        </StackPanel>
+
         <!-- Username Input -->
-        <StackPanel Grid.Row="2" Margin="0,15,0,0">
+        <StackPanel Grid.Row="3" Margin="0,15,0,0">
             <TextBlock Text="Tu nombre de jugador:" FontSize="14" Foreground="#888" Margin="0,0,0,5"/>
             <ui:TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
                        PlaceholderText="Ingresa tu nombre..."
@@ -83,7 +97,7 @@
         </StackPanel>
 
         <!-- VPN Status -->
-        <Border Grid.Row="3" Background="#0f3460" CornerRadius="8" Padding="15" Margin="0,15,0,0">
+        <Border Grid.Row="4" Background="#0f3460" CornerRadius="8" Padding="15" Margin="0,15,0,0">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="🔒" FontSize="20" VerticalAlignment="Center"/>
                 <StackPanel Margin="10,0,0,0">
@@ -94,7 +108,7 @@
         </Border>
 
         <!-- Play Button -->
-        <ui:Button Grid.Row="4" 
+        <ui:Button Grid.Row="5" 
                    Content="🎮 JUGAR"
                    Command="{Binding JugarCommand}"
                    IsEnabled="{Binding IsJugarEnabled}"

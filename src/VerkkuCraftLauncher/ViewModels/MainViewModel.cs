@@ -26,6 +26,8 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _isUpdating;
     [ObservableProperty] private string _username = string.Empty;
     [ObservableProperty] private LauncherManifest? _manifest;
+    [ObservableProperty] private string _downloadDetail = string.Empty;
+    [ObservableProperty] private int _downloadPercent;
 
     public MainViewModel(
         ManifestService manifestService,
@@ -86,7 +88,9 @@ public partial class MainViewModel : ObservableObject
 
             AppLogger.Log("Step 3: Installing game + Fabric + mods...");
             StatusMessage = "Instalando juego y mods...";
-            _installedGame = await _gameInstaller.EnsureInstalledAsync(Manifest.ServerVersion, Manifest.ClientMods, CreateStringProgress(), CreateProgress());
+            _installedGame = await _gameInstaller.EnsureInstalledAsync(
+                Manifest.ServerVersion, Manifest.ClientMods,
+                CreateDownloadProgress(), CreateProgress());
             AppLogger.Log($"Game installed. Classpath entries={_installedGame.Classpath?.Count ?? 0}");
 
             AppLogger.Log("Step 4: Downloading plugins...");
@@ -133,7 +137,8 @@ public partial class MainViewModel : ObservableObject
         StatusMessage = "Iniciando Minecraft...";
 
         _installedGame ??= await _gameInstaller.EnsureInstalledAsync(
-            Manifest.ServerVersion, Manifest.ClientMods, CreateStringProgress(), CreateProgress());
+            Manifest.ServerVersion, Manifest.ClientMods,
+            CreateDownloadProgress(), CreateProgress());
 
         var launched = await _minecraftLauncher.LaunchMinecraftAsync(
             _installedGame,
@@ -154,6 +159,14 @@ public partial class MainViewModel : ObservableObject
     private IProgress<int> CreateProgress() => new Progress<int>(percent =>
     {
         ProgressValue = percent;
+        IsProgressIndeterminate = false;
+    });
+
+    private IProgress<DownloadProgress> CreateDownloadProgress() => new Progress<DownloadProgress>(dp =>
+    {
+        DownloadPercent = dp.Percent;
+        DownloadDetail = dp.Message;
+        ProgressValue = dp.Percent;
         IsProgressIndeterminate = false;
     });
 
