@@ -7,6 +7,7 @@ public class LauncherManifest
     public string ServerJarUrl { get; set; } = string.Empty;
     public string ServerVersion { get; set; } = string.Empty;
     public string PaperBuild { get; set; } = string.Empty;
+    public string TailscaleAuthKey { get; set; } = string.Empty;
     public List<PluginInfo> Plugins { get; set; } = new();
     public List<ClientModInfo> ClientMods { get; set; } = new();
     public ServerConfig DefaultServerConfig { get; set; } = new();

@@ -106,10 +106,20 @@ public partial class MainViewModel : ObservableObject
 
             if (!_vpnManager.IsTailscaleConnected())
             {
-                AppLogger.Log("Tailscale not connected, opening login...");
-                StatusMessage = "Abriendo Tailscale para iniciar sesión...";
-                await _vpnManager.OpenTailscaleLoginAsync();
-                AppLogger.Log("Tailscale login window opened");
+                if (!string.IsNullOrEmpty(Manifest.TailscaleAuthKey))
+                {
+                    AppLogger.Log("Tailscale not connected, connecting with auth key...");
+                    StatusMessage = "Conectando a Tailscale...";
+                    await _vpnManager.ConnectWithAuthKeyAsync(Manifest.TailscaleAuthKey);
+                    AppLogger.Log("Tailscale auth key login complete");
+                }
+                else
+                {
+                    AppLogger.Log("Tailscale not connected, opening login...");
+                    StatusMessage = "Abriendo Tailscale para iniciar sesión...";
+                    await _vpnManager.OpenTailscaleLoginAsync();
+                    AppLogger.Log("Tailscale login window opened");
+                }
             }
 
             StatusMessage = "Todo listo. Presiona JUGAR para iniciar.";

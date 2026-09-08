@@ -37,6 +37,7 @@
       "version": "2.6.21"
     }
   ],
+  "tailscaleAuthKey": "",
   "defaultServerConfig": {
     "serverName": "VerkkuCraft",
     "serverAddress": "verkku.taild0c659.ts.net",
