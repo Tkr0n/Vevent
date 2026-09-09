@@ -99,13 +99,19 @@ public partial class MainWindow : FluentWindow
                 selectedShaders, mcVersion, shaderMods, progress);
 
             var message = $"Importación completada:\n" +
-                          $"- Instalados: {result.Installed.Count}\n" +
-                          $"- Omitidos (ya existen): {result.Skipped.Count}\n" +
-                          $"- Mods instalados: {result.ModsInstalled.Count}";
+                          $"- Shaders instalados: {result.Installed.Count}\n" +
+                          $"- Shaders omitidos (ya existían): {result.Skipped.Count}\n" +
+                          $"- Mods de shader instalados: {result.ModsInstalled.Count}\n" +
+                          $"- Mods de shader ya instalados: {result.ModsAlreadyInstalled.Count}";
 
             if (result.Errors.Count > 0)
             {
                 message += $"\n\nErrores:\n{string.Join("\n", result.Errors)}";
+            }
+
+            if (result.ModsInstalled.Count == 0 && result.ModsAlreadyInstalled.Count == 0 && result.Errors.Count == 0)
+            {
+                message += "\n\nNo se instalaron Iris/Sodium. Los shaders no funcionarán sin ellos.";
             }
 
             System.Windows.MessageBox.Show(message, "Resultado", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);

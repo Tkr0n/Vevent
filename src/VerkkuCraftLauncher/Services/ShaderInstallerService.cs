@@ -55,26 +55,35 @@ public class ShaderInstallerService
 
         foreach (var mod in shaderMods)
         {
-            if (string.IsNullOrEmpty(mod.ModrinthProjectId))
-                continue;
+            progress?.Report(new DownloadProgress(0, $"Procesando {mod.Name}..."));
 
-            // Check if mod already exists
-            var existingMod = Directory.GetFiles(modsDir, $"{mod.Name}*.jar");
-            if (existingMod.Length > 0)
+            if (string.IsNullOrEmpty(mod.ModrinthProjectId))
+            {
+                progress?.Report(new DownloadProgress(0, $"{mod.Name}: sin ID de Modrinth, omitido"));
+                continue;
+            }
+
+            // Check if mod already exists (case-insensitive)
+            var existingMod = Directory.GetFiles(modsDir, "*.jar")
+                .FirstOrDefault(f => Path.GetFileName(f).Contains(mod.Name, StringComparison.OrdinalIgnoreCase));
+            if (existingMod != null)
             {
                 result.ModsAlreadyInstalled.Add(mod.Name);
+                progress?.Report(new DownloadProgress(0, $"{mod.Name} ya instalado: {Path.GetFileName(existingMod)}"));
                 continue;
             }
 
             try
             {
                 progress?.Report(new DownloadProgress(0, $"Descargando {mod.Name}..."));
-                await _modrinth.DownloadModAsync(mod.ModrinthProjectId, mcVersion, "fabric", modsDir, ct);
+                var path = await _modrinth.DownloadModAsync(mod.ModrinthProjectId, mcVersion, "fabric", modsDir, ct);
                 result.ModsInstalled.Add(mod.Name);
+                progress?.Report(new DownloadProgress(0, $"{mod.Name} instalado: {Path.GetFileName(path)}"));
             }
             catch (Exception ex)
             {
                 result.Errors.Add($"{mod.Name}: {ex.Message}");
+                progress?.Report(new DownloadProgress(0, $"Error {mod.Name}: {ex.Message}"));
             }
         }
 
