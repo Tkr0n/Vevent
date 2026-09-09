@@ -39,8 +39,8 @@ services:
         illager-invasion
         player-revive
         codxlib
-        forgeconfigapiport
-        puzzleslib
+        forge-config-api-port
+        puzzles-lib
     dns:
       - 1.1.1.1
       - 8.8.8.8
