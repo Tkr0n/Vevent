@@ -1,23 +1,17 @@
 # ==================================
-# Build y Temporales de Gradle
+# Gradle
 # ==================================
 .gradle/
+**/build/
+!**/build/libs/
+**/build/libs/*
+!**/build/libs/*.jar
 
-# Ignorar todo el contenido de la carpeta build...
-build/*
-# ...PERO permitir que Git entre a la carpeta de salida (libs)
-!build/libs/
-
-# Dentro de libs, ignorar todo (por si hay archivos temporales)...
-build/libs/*
-# ...PERO permitir y subir los archivos .jar finales
-!build/libs/*.jar
-
-# (Opcional) Si decides usar el wrapper de Gradle
-!gradle/wrapper/gradle-wrapper.jar
+# Gradle wrapper (allow the jar)
+!**/gradle/wrapper/gradle-wrapper.jar
 
 # ==================================
-# Archivos compilados de Java
+# Java
 # ==================================
 *.class
 *.log
@@ -26,58 +20,56 @@ build/libs/*
 hs_err_pid*
 replay_pid*
 
-# Ignoramos cualquier otro .jar que ande suelto por ahí
-# (Pero la excepción de !build/libs/*.jar de arriba lo sobreescribe para el output)
-*.jar
+# ==================================
+# .NET / C# / WPF
+# ==================================
+**/bin/
+**/obj/
+**/out/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.nupkg
+*.snupkg
+project.nuget.cache
 
 # ==================================
-# Visual Studio Code / Cursor / OpenCode
+# IDEs
 # ==================================
+# VS Code / Cursor / OpenCode
 .vscode/
 .factorypath
 
-# ==================================
 # IntelliJ IDEA
-# ==================================
 .idea/
 *.iml
 *.iws
 *.ipr
-out/
 
-# ==================================
 # Eclipse
-# ==================================
 .settings/
 .classpath
 .project
-bin/
+
+# Visual Studio
+.vs/
 
 # ==================================
-# Archivos del Sistema Operativo
+# OS
 # ==================================
 .DS_Store
 Thumbs.db
 desktop.ini
 
 # ==================================
-# Secretos y Configuraciones Locales
+# Secrets & Local Config
 # ==================================
 config.yml
 .env
-
 TestServer
 
 # ==================================
-# .NET / C# / WPF
+# Build artifacts (root level)
 # ==================================
-bin/
-obj/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-.vs/
-*.nupkg
-*.snupkg
-project.nuget.cache
+publish/
