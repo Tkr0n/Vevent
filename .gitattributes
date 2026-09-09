@@ -1,0 +1,49 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Java sources
+*.java text diff=java
+*.gradle text diff=gradle
+
+# Kotlin
+*.kt text diff=kotlin
+*.kts text diff=kotlin
+
+# XML
+*.xml text
+*.yml text
+*.yaml text
+
+# JSON
+*.json text
+
+# Properties
+*.properties text
+
+# C# / .NET
+*.cs text diff=csharp
+*.csproj text
+*.slnx text
+
+# PowerShell
+*.ps1 text eol=crlf
+
+# Batch
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Markdown
+*.md text diff=markdown
+
+# Binary files (no diff, no merge, no line ending conversion)
+*.jar binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text
+*.pdf binary
+*.zip binary
+*.exe binary
+*.pdb binary
