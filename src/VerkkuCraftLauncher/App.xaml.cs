@@ -40,12 +40,14 @@ public partial class App : Application
             var mojangMetaService = new MojangMetaService(downloader);
             var fabricService = new FabricService(downloader);
             var modrinthService = new ModrinthService(downloader);
-            var gameInstaller = new GameInstallerService(mojangMetaService, fabricService, modrinthService);
+            var shaderDetectionService = new ShaderDetectionService();
+            var gameInstaller = new GameInstallerService(mojangMetaService, fabricService, modrinthService, shaderDetectionService);
             var accountService = new LauncherAccountService();
+            var skinService = new SkinService(downloader);
 
             _mainViewModel = new MainViewModel(
                 manifestService, javaManager, serverManager,
-                vpnManager, minecraftLauncher, updateManager, gameInstaller, accountService);
+                vpnManager, minecraftLauncher, updateManager, gameInstaller, accountService, skinService, shaderDetectionService);
 
             var mainWindow = new MainWindow { DataContext = _mainViewModel };
             mainWindow.Show();

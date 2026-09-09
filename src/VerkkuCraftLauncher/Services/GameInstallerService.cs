@@ -18,9 +18,18 @@ public class GameInstallerService
     private readonly MojangMetaService _mojang;
     private readonly FabricService _fabric;
     private readonly ModrinthService _modrinth;
+    private readonly ShaderDetectionService _shaderDetection;
 
-    public GameInstallerService(MojangMetaService mojang, FabricService fabric, ModrinthService modrinth)
-    { _mojang = mojang; _fabric = fabric; _modrinth = modrinth; }
+    public GameInstallerService(MojangMetaService mojang, FabricService fabric, 
+        ModrinthService modrinth, ShaderDetectionService shaderDetection)
+    { 
+        _mojang = mojang; 
+        _fabric = fabric; 
+        _modrinth = modrinth;
+        _shaderDetection = shaderDetection;
+    }
+
+    public List<DetectedShader> LastDetectedShaders { get; private set; } = new();
 
     public async Task<InstalledGame> EnsureInstalledAsync(
         string mcVersion, List<ClientModInfo> mods,
@@ -71,6 +80,8 @@ public class GameInstallerService
                 await _modrinth.DownloadModAsync(mod.ModrinthProjectId, mcVersion, "fabric", modsDir, ct);
             }
         }
+        progress?.Report(new DownloadProgress(99, "Detectando shaders en otros launchers..."));
+        LastDetectedShaders = _shaderDetection.DetectShaders();
         progress?.Report(new DownloadProgress(100, "Instalación completa"));
         return new InstalledGame
         {

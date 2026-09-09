@@ -22,6 +22,7 @@ public partial class MainViewModel : ObservableObject
     private readonly GameInstallerService _gameInstaller;
     private readonly LauncherAccountService _accountService;
     private readonly SkinService _skinService;
+    private readonly ShaderDetectionService _shaderDetectionService;
     private InstalledGame? _installedGame;
     private CancellationTokenSource? _skinCts;
 
@@ -77,7 +78,8 @@ public partial class MainViewModel : ObservableObject
         UpdateManager updateManager,
         GameInstallerService gameInstaller,
         LauncherAccountService accountService,
-        SkinService skinService)
+        SkinService skinService,
+        ShaderDetectionService shaderDetectionService)
     {
         _manifestService = manifestService;
         _javaManager = javaManager;
@@ -88,6 +90,7 @@ public partial class MainViewModel : ObservableObject
         _gameInstaller = gameInstaller;
         _accountService = accountService;
         _skinService = skinService;
+        _shaderDetectionService = shaderDetectionService;
     }
 
     public async Task InitializeAsync()
