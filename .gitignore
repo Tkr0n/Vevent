@@ -37,22 +37,15 @@ project.nuget.cache
 # ==================================
 # IDEs
 # ==================================
-# VS Code / Cursor / OpenCode
 .vscode/
 .factorypath
-
-# IntelliJ IDEA
 .idea/
 *.iml
 *.iws
 *.ipr
-
-# Eclipse
 .settings/
 .classpath
 .project
-
-# Visual Studio
 .vs/
 
 # ==================================
