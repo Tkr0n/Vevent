@@ -10,6 +10,7 @@ public class LauncherManifest
     public string TailscaleAuthKey { get; set; } = string.Empty;
     public List<PluginInfo> Plugins { get; set; } = new();
     public List<ClientModInfo> ClientMods { get; set; } = new();
+    public List<ShaderModInfo> ShaderMods { get; set; } = new();
     public ServerConfig DefaultServerConfig { get; set; } = new();
 }
 
@@ -24,6 +25,15 @@ public class PluginInfo
 }
 
 public class ClientModInfo
+{
+    public string Name { get; set; } = string.Empty;
+    public string ModrinthProjectId { get; set; } = string.Empty;
+    public string Version { get; set; } = string.Empty;
+    public string FileName { get; set; } = string.Empty;
+    public string DownloadUrl { get; set; } = string.Empty;
+}
+
+public class ShaderModInfo
 {
     public string Name { get; set; } = string.Empty;
     public string ModrinthProjectId { get; set; } = string.Empty;

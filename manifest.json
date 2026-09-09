@@ -156,6 +156,57 @@
       "version": "",
       "fileName": "",
       "downloadUrl": ""
+    },
+    {
+      "name": "Just Enough Items (JEI)",
+      "modrinthProjectId": "jei",
+      "version": "",
+      "fileName": "",
+      "downloadUrl": ""
+    },
+    {
+      "name": "Jade",
+      "modrinthProjectId": "jade",
+      "version": "",
+      "fileName": "",
+      "downloadUrl": ""
+    },
+    {
+      "name": "Adventurer's Beyond",
+      "modrinthProjectId": "adventurers-beyond",
+      "version": "",
+      "fileName": "",
+      "downloadUrl": ""
+    },
+    {
+      "name": "TerraBlender",
+      "modrinthProjectId": "terrablender",
+      "version": "",
+      "fileName": "",
+      "downloadUrl": ""
+    },
+    {
+      "name": "SkinShuffle",
+      "modrinthProjectId": "skinshuffle",
+      "version": "",
+      "fileName": "",
+      "downloadUrl": ""
+    }
+  ],
+  "shaderMods": [
+    {
+      "name": "Iris",
+      "modrinthProjectId": "iris",
+      "version": "",
+      "fileName": "",
+      "downloadUrl": ""
+    },
+    {
+      "name": "Sodium",
+      "modrinthProjectId": "sodium",
+      "version": "",
+      "fileName": "",
+      "downloadUrl": ""
     }
   ],
   "tailscaleAuthKey": "",
