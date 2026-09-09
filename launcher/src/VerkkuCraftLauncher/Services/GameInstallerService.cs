@@ -48,6 +48,7 @@ public class GameInstallerService
             fabric, Path.Combine(baseDir, "libraries"), progress, ct);
         progress?.Report(new DownloadProgress(97, "Descargando mods..."));
         var modsDir = Path.Combine(baseDir, "game", mcVersion, "mods");
+        await CleanupStaleModsAsync(mods, modsDir, mcVersion, ct);
         foreach (var mod in mods)
         {
             if (!string.IsNullOrEmpty(mod.DownloadUrl) && string.IsNullOrEmpty(mod.ModrinthProjectId))
@@ -90,5 +91,46 @@ public class GameInstallerService
             AssetsDir = files.AssetsDir,
             AssetIndexId = info.AssetIndexId
         };
+    }
+
+    private async Task CleanupStaleModsAsync(
+        List<ClientModInfo> mods, string modsDir, string mcVersion, CancellationToken ct)
+    {
+        if (!Directory.Exists(modsDir)) return;
+
+        var expectedFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var mod in mods)
+        {
+            if (!string.IsNullOrEmpty(mod.FileName))
+            {
+                expectedFileNames.Add(mod.FileName);
+            }
+            else if (!string.IsNullOrEmpty(mod.ModrinthProjectId))
+            {
+                try
+                {
+                    var (_, fileName, _) = await _modrinth.ResolveFileAsync(
+                        mod.ModrinthProjectId, mcVersion, "fabric", ct);
+                    if (!string.IsNullOrEmpty(fileName))
+                        expectedFileNames.Add(fileName);
+                }
+                catch
+                {
+                    // Si no se puede resolver, no limpiamos ese mod
+                }
+            }
+            else if (!string.IsNullOrEmpty(mod.DownloadUrl))
+            {
+                expectedFileNames.Add(Path.GetFileName(new Uri(mod.DownloadUrl).AbsolutePath));
+            }
+        }
+
+        foreach (var file in Directory.GetFiles(modsDir, "*.jar"))
+        {
+            if (!expectedFileNames.Contains(Path.GetFileName(file)))
+            {
+                try { File.Delete(file); } catch { }
+            }
+        }
     }
 }

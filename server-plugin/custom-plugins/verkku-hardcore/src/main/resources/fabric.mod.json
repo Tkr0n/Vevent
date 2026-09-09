@@ -1,0 +1,21 @@
+{
+    "schemaVersion": 1,
+    "id": "verkku-hardcore",
+    "version": "${version}",
+    "name": "Verkku Hardcore",
+    "description": "Hardcore mode with 3 lives per player. Lose all lives and the world regenerates!",
+    "authors": ["VerkkuCraft"],
+    "contact": {},
+    "license": "MIT",
+    "icon": "assets/verkku-hardcore/icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": ["com.verkku.hardcore.HardcoreMod"]
+    },
+    "depends": {
+        "fabricloader": ">=0.19.5",
+        "minecraft": "26.2",
+        "java": ">=21",
+        "fabric-api": "*"
+    }
+}

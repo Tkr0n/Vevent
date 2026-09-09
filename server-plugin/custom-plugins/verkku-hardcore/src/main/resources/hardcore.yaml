@@ -1,0 +1,6 @@
+hardcore:
+  max_lives: 3
+  ko_timeout_seconds: 45
+  regen_world_on_last_life: true
+  broadcast_ko_message: true
+  ko_message: "{player} está KO - revívelo"

@@ -1,0 +1,21 @@
+{
+    "schemaVersion": 1,
+    "id": "verkku-hardcore-hud",
+    "version": "${version}",
+    "name": "Verkku Hardcore HUD",
+    "description": "Client-side HUD showing 3 hearts for the Hardcore mode",
+    "authors": ["VerkkuCraft"],
+    "contact": {},
+    "license": "MIT",
+    "environment": "client",
+    "entrypoints": {
+        "client": ["com.verkku.hardcore.client.HardcoreHudMod"]
+    },
+    "depends": {
+        "fabricloader": ">=0.19.5",
+        "minecraft": "26.2",
+        "java": ">=21",
+        "fabric-api": "*",
+        "verkku-hardcore": "*"
+    }
+}
