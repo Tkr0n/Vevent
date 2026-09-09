@@ -4,7 +4,7 @@
 # Los mods se descargan automáticamente de Modrinth (misma lista que el launcher).
 services:
   mc:
-    image: itzg/minecraft-server:java21
+    image: itzg/minecraft-server:java25
     container_name: mc-fabric
     restart: unless-stopped
     ports:
@@ -33,11 +33,14 @@ services:
         jade
         journeymap
         appleskin
-        cleanhud
-        mob plaque
+        clean_hud
+        mob-plaques
         mutant-monsters
         illager-invasion
         player-revive
+        codxlib
+        forgeconfigapiport
+        puzzleslib
     dns:
       - 1.1.1.1
       - 8.8.8.8

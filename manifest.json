@@ -236,6 +236,33 @@
       "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/verkku-hardcore-hud-1.0.0.jar",
       "sha256": "0281192eb78e410bc95d548537a25038ed46d03ef7918bc44014b11365480235",
       "fileSize": 17677
+    },
+    {
+      "name": "CodxLib",
+      "modrinthProjectId": "",
+      "version": "1.6.0+fabric-26.2",
+      "fileName": "codxlib-1.6.0-fabric+26.2.jar",
+      "downloadUrl": "https://cdn.modrinth.com/data/6oyMM4yX/versions/oCRKy4Kr/codxlib-1.6.0-fabric%2B26.2.jar",
+      "sha256": "524149dc707c015ff43e86c766fd7d5f856ac2921325de7bb31b3b8fa2b4cf129528933928c9474870425b71d704056b9946e45a941b7ffc2260ce2f49a4bcbe",
+      "fileSize": 196849
+    },
+    {
+      "name": "Forge Config API Port",
+      "modrinthProjectId": "",
+      "version": "26.2.1",
+      "fileName": "ForgeConfigAPIPort-v26.2.1-mc26.2.x-Fabric.jar",
+      "downloadUrl": "https://cdn.modrinth.com/data/ohNO6lps/versions/rSd3GiG8/ForgeConfigAPIPort-v26.2.1-mc26.2.x-Fabric.jar",
+      "sha256": "948b8d83de61a11aad2fc0bb0744a8b4848c9b2f0663c9aa015389d9560b3fa78518e609c44ec90278de0e159a92ebd721ccbdebb453aa455c353e5cd19413bf",
+      "fileSize": 609550
+    },
+    {
+      "name": "PuzzlesLib",
+      "modrinthProjectId": "",
+      "version": "26.2.3",
+      "fileName": "PuzzlesLib-v26.2.3-mc26.2.x-Fabric.jar",
+      "downloadUrl": "https://cdn.modrinth.com/data/QAGBst4M/versions/KU5rZUAR/PuzzlesLib-v26.2.3-mc26.2.x-Fabric.jar",
+      "sha256": "3d5c0fa58f75f3cd345bc48a08a783890aab8ef01d1be113088138dda1bf79030a782dd267688c07cc2ea7a7d09710d50797416fc2292c58004cc6ff27c791bd",
+      "fileSize": 1145463
     }
   ],
   "shaderMods": [
