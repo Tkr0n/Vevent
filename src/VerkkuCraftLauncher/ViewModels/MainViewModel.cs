@@ -1,6 +1,10 @@
+using System.Collections.ObjectModel;
 using System.IO;
+using System.Windows;
+using System.Windows.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 using VerkkuCraftLauncher.Helpers;
 using VerkkuCraftLauncher.Models;
 using VerkkuCraftLauncher.Services;
@@ -17,7 +21,9 @@ public partial class MainViewModel : ObservableObject
     private readonly UpdateManager _updateManager;
     private readonly GameInstallerService _gameInstaller;
     private readonly LauncherAccountService _accountService;
+    private readonly SkinService _skinService;
     private InstalledGame? _installedGame;
+    private CancellationTokenSource? _skinCts;
 
     [ObservableProperty] private string _statusMessage = "Iniciando VerkkuCraft...";
     [ObservableProperty] private int _progressValue;
@@ -28,6 +34,39 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private LauncherManifest? _manifest;
     [ObservableProperty] private string _downloadDetail = string.Empty;
     [ObservableProperty] private int _downloadPercent;
+    [ObservableProperty] private BitmapImage? _skinPreview;
+
+    public ObservableCollection<DetectedShader> DetectedShaders { get; } = new();
+    public bool HasDetectedShaders => DetectedShaders.Count > 0;
+
+    public void LoadDetectedShaders(List<DetectedShader> shaders)
+    {
+        DetectedShaders.Clear();
+        foreach (var shader in shaders)
+        {
+            DetectedShaders.Add(shader);
+        }
+        OnPropertyChanged(nameof(HasDetectedShaders));
+    }
+
+    partial void OnUsernameChanged(string value)
+    {
+        _skinCts?.Cancel();
+        _skinCts = new CancellationTokenSource();
+        _ = LoadSkinDebounced(value, _skinCts.Token);
+    }
+
+    private async Task LoadSkinDebounced(string username, CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(500, ct);
+            if (string.IsNullOrWhiteSpace(username)) { SkinPreview = null; return; }
+            SkinPreview = await _skinService.FetchSkinAsync(username);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { AppLogger.LogError("SkinPreview", ex); }
+    }
 
     public MainViewModel(
         ManifestService manifestService,
@@ -37,7 +76,8 @@ public partial class MainViewModel : ObservableObject
         MinecraftLauncher minecraftLauncher,
         UpdateManager updateManager,
         GameInstallerService gameInstaller,
-        LauncherAccountService accountService)
+        LauncherAccountService accountService,
+        SkinService skinService)
     {
         _manifestService = manifestService;
         _javaManager = javaManager;
@@ -47,6 +87,7 @@ public partial class MainViewModel : ObservableObject
         _updateManager = updateManager;
         _gameInstaller = gameInstaller;
         _accountService = accountService;
+        _skinService = skinService;
     }
 
     public async Task InitializeAsync()
@@ -122,6 +163,12 @@ public partial class MainViewModel : ObservableObject
                     AppLogger.Log("Tailscale login window opened");
                 }
             }
+
+            StatusMessage = "Importando skin...";
+            var gameDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "VerkkuCraft", "game", Manifest.ServerVersion);
+            await _skinService.AutoImportSkinAsync(Username, gameDir);
 
             StatusMessage = "Todo listo. Presiona JUGAR para iniciar.";
             IsJugarEnabled = true;
@@ -227,4 +274,66 @@ public partial class MainViewModel : ObservableObject
     {
         StatusMessage = message;
     });
+
+    [RelayCommand]
+    private async Task ImportSkinAsync()
+    {
+        try
+        {
+            var dialog = new OpenFileDialog
+            {
+                Filter = "Archivos PNG (*.png)|*.png",
+                Title = "Selecciona tu skin"
+            };
+
+            if (dialog.ShowDialog() != true) return;
+
+            var gameDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "VerkkuCraft", "game", Manifest?.ServerVersion ?? "1.21.1");
+
+            StatusMessage = "Importando skin...";
+            await _skinService.ImportSkinFileAsync(dialog.FileName, gameDir);
+            StatusMessage = "Skin importada correctamente. Abre SkinShuffle en el juego para activarla.";
+
+            // Show cropped face in preview
+            var skinBytes = await File.ReadAllBytesAsync(dialog.FileName);
+            SkinPreview = CropFaceForPreview(skinBytes);
+        }
+        catch (Exception ex)
+        {
+            AppLogger.LogError("ImportSkin", ex);
+            StatusMessage = $"Error al importar skin: {ex.Message}";
+        }
+    }
+
+    private static BitmapImage? CropFaceForPreview(byte[] skinBytes)
+    {
+        var skin = new BitmapImage();
+        using (var ms = new MemoryStream(skinBytes))
+        {
+            skin.BeginInit();
+            skin.CacheOption = BitmapCacheOption.OnLoad;
+            skin.StreamSource = ms;
+            skin.EndInit();
+            skin.Freeze();
+        }
+
+        var face = new CroppedBitmap(skin, new Int32Rect(8, 8, 8, 8));
+
+        using var output = new MemoryStream();
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(face));
+        encoder.Save(output);
+        output.Position = 0;
+
+        var avatar = new BitmapImage();
+        avatar.BeginInit();
+        avatar.CacheOption = BitmapCacheOption.OnLoad;
+        avatar.StreamSource = output;
+        avatar.DecodePixelWidth = 64;
+        avatar.EndInit();
+        avatar.Freeze();
+        return avatar;
+    }
 }

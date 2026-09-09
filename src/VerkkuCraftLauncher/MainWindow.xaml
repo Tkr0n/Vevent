@@ -6,7 +6,7 @@
         xmlns:converters="clr-namespace:VerkkuCraftLauncher.Converters"
         Title="VerkkuCraft Launcher" 
         Icon="/Assets/img/icon.jpg"
-        Width="700" Height="650"
+        Width="700" Height="600"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#1a1a2e"
@@ -89,17 +89,46 @@
                        TextTrimming="CharacterEllipsis"/>
         </StackPanel>
 
-        <!-- Username Input -->
-        <StackPanel Grid.Row="3" Margin="0,15,0,0">
-            <TextBlock Text="Tu nombre de jugador:" FontSize="14" Foreground="#888" Margin="0,0,0,5"/>
-            <ui:TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
-                       PlaceholderText="Ingresa tu nombre..."
-                       Icon="{ui:SymbolIcon Person24}"
-                       FontSize="16"/>
-        </StackPanel>
+        <!-- Username + Skin Section -->
+        <Grid Grid.Row="3" Margin="0,15,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="2">
+                <TextBlock Text="Tu nombre de jugador:" FontSize="14" Foreground="#888" Margin="0,0,0,5"/>
+                <ui:TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}"
+                           PlaceholderText="Ingresa tu nombre..."
+                           Icon="{ui:SymbolIcon Person24}"
+                           FontSize="16"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" 
+                        Orientation="Vertical" VerticalAlignment="Center" Margin="15,0,0,0">
+                <Border Background="#0f1a30" CornerRadius="8" Width="72" Height="72"
+                        ClipToBounds="True" BorderBrush="#2a3a5c" BorderThickness="1">
+                    <Image Source="{Binding SkinPreview}" 
+                           RenderOptions.BitmapScalingMode="NearestNeighbor"
+                           Stretch="UniformToFill"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <ui:Button Content="Importar skin"
+                           Command="{Binding ImportSkinCommand}"
+                           Appearance="Secondary"
+                           FontSize="11"
+                           Height="28"
+                           Margin="0,6,0,0"
+                           HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
 
         <!-- VPN Status -->
-        <Border Grid.Row="4" Background="#0f3460" CornerRadius="8" Padding="15" Margin="0,15,0,0">
+        <!--<Border Grid.Row="4" Background="#0f3460" CornerRadius="8" Padding="15" Margin="0,15,0,0">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="🔒" FontSize="20" VerticalAlignment="Center"/>
                 <StackPanel Margin="10,0,0,0">
@@ -107,7 +136,7 @@
                     <TextBlock Text="Necesario para voz UDP" FontSize="12" Foreground="#888"/>
                 </StackPanel>
             </StackPanel>
-        </Border>
+        </Border>-->
 
         <!-- Play Button -->
         <ui:Button Grid.Row="5" 
@@ -120,6 +149,31 @@
                    Height="60"
                    Margin="0,20,0,0"
                    HorizontalAlignment="Stretch"/>
+
+        <!-- Shader Import Panel -->
+        <Grid x:Name="ShaderImportPanel" Grid.Row="5" Visibility="Collapsed" Margin="0,10,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0" Text="Shaders detectados:" FontWeight="Bold" Margin="0,0,0,5"/>
+
+            <ListBox Grid.Row="1" x:Name="ShaderListBox"
+                     ItemsSource="{Binding DetectedShaders}"
+                     DisplayMemberPath="Name"
+                     SelectionMode="ExtendedSelection"
+                     MaxHeight="150"/>
+
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
+                <Button Content="Importar seleccionados"
+                        Click="ImportShaders_Click"
+                        Margin="0,0,10,0"/>
+                <Button Content="Omitir"
+                        Click="SkipShaders_Click"/>
+            </StackPanel>
+        </Grid>
     </Grid>
     </Grid>
 </ui:FluentWindow>
