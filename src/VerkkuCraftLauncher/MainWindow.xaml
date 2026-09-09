@@ -10,7 +10,8 @@
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#1a1a2e"
-        Foreground="White">
+        Foreground="White"
+        Loaded="Window_Loaded">
 
     <ui:FluentWindow.Resources>
         <ResourceDictionary>

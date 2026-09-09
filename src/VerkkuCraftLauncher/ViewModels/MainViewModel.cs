@@ -50,6 +50,11 @@ public partial class MainViewModel : ObservableObject
         OnPropertyChanged(nameof(HasDetectedShaders));
     }
 
+    public List<DetectedShader> DetectShaders()
+    {
+        return _shaderDetectionService.DetectShaders();
+    }
+
     partial void OnUsernameChanged(string value)
     {
         _skinCts?.Cancel();

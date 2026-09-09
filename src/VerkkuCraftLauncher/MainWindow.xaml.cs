@@ -2,6 +2,7 @@
 using System.Windows.Input;
 using System.Linq;
 using VerkkuCraftLauncher.Models;
+using VerkkuCraftLauncher.ViewModels;
 using Wpf.Ui.Controls;
 
 namespace VerkkuCraftLauncher;
@@ -14,6 +15,28 @@ public partial class MainWindow : FluentWindow
     public MainWindow()
     {
         InitializeComponent();
+    }
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not MainViewModel viewModel) return;
+
+        var detectedShaders = viewModel.DetectShaders();
+        if (detectedShaders.Count > 0)
+        {
+            var result = System.Windows.MessageBox.Show(
+                $"Se encontraron {detectedShaders.Count} shader(s) en otro launcher.\n" +
+                "¿Deseas importarlos?",
+                "Shaders detectados",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Question);
+
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                viewModel.LoadDetectedShaders(detectedShaders);
+                ShaderImportPanel.Visibility = Visibility.Visible;
+            }
+        }
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
