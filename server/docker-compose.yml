@@ -18,7 +18,6 @@ services:
       VERSION: "1.21.1" # Fijado a 1.21.1 para coincidir con el launcher
       MEMORY: "8G" # Ajusta según la RAM de tu RPi
       USE_AIKAR_FLAGS: "true"
-      OPS: "T3kr0n"
       ENABLE_RCON: "true"
       RCON_PASSWORD: "saydenier"
       MODRINTH_PROJECTS: |
@@ -39,6 +38,10 @@ services:
         yigd
         cloth-config
         yungs-api
+        jei
+        jade
+        adventurers-beyond
+        terrablender
     dns:
       - 1.1.1.1
       - 8.8.8.8

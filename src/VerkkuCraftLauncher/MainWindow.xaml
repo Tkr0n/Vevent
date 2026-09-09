@@ -6,7 +6,7 @@
         xmlns:converters="clr-namespace:VerkkuCraftLauncher.Converters"
         Title="VerkkuCraft Launcher" 
         Icon="/Assets/img/icon.jpg"
-        Width="700" Height="600"
+        Width="700" Height="700"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#1a1a2e"
@@ -52,6 +52,7 @@
         <!-- Main Content -->
         <Grid Grid.Row="1" Margin="20">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -152,7 +153,7 @@
                    HorizontalAlignment="Stretch"/>
 
         <!-- Shader Import Panel -->
-        <Grid x:Name="ShaderImportPanel" Grid.Row="5" Visibility="Collapsed" Margin="0,10,0,0">
+        <Grid x:Name="ShaderImportPanel" Grid.Row="6" Visibility="Collapsed" Margin="0,10,0,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -164,7 +165,7 @@
             <ListBox Grid.Row="1" x:Name="ShaderListBox"
                      ItemsSource="{Binding DetectedShaders}"
                      DisplayMemberPath="Name"
-                     SelectionMode="ExtendedSelection"
+                     SelectionMode="Extended"
                      MaxHeight="150"/>
 
             <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5,0,0">
