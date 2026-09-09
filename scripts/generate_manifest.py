@@ -64,7 +64,12 @@ def calculate_sha256(filepath: str) -> str:
 
 
 def scan_mods_directory(folder_path: str, is_custom: bool = False) -> list[dict]:
-    """Scan a mods folder and return manifest entries."""
+    """Scan a mods folder and return manifest entries.
+
+    For third-party mods (is_custom=False): scans root-level .jar files only.
+    For custom mods (is_custom=True): scans build/libs/*.jar inside each subdirectory.
+    Always excludes gradle-wrapper.jar.
+    """
     mods = []
     folder = Path(folder_path)
 
@@ -72,21 +77,49 @@ def scan_mods_directory(folder_path: str, is_custom: bool = False) -> list[dict]
         print(f"Warning: Directory {folder_path} does not exist")
         return mods
 
-    for f in sorted(folder.glob("*.jar")):
-        name, version = parse_mod_filename(f.name)
-        sha256 = calculate_sha256(str(f))
-        size = f.stat().st_size
-
-        mod_entry = {
-            'name': name,
-            'version': version,
-            'fileName': f.name,
-            'sha256': sha256,
-            'fileSize': size,
-            'isCustom': is_custom
-        }
-        mods.append(mod_entry)
-        print(f"  Found: {name} v{version} ({f.name})")
+    if is_custom:
+        # Custom mods: scan build/libs/ inside each subdirectory
+        for mod_dir in sorted(folder.iterdir()):
+            if not mod_dir.is_dir():
+                continue
+            build_libs = mod_dir / "build" / "libs"
+            if not build_libs.exists():
+                print(f"  Skipping {mod_dir.name} (no build/libs/)")
+                continue
+            for f in sorted(build_libs.glob("*.jar")):
+                if f.name == 'gradle-wrapper.jar' or f.name.endswith('-sources.jar'):
+                    continue
+                name, version = parse_mod_filename(f.name)
+                sha256 = calculate_sha256(str(f))
+                size = f.stat().st_size
+                mod_entry = {
+                    'name': name,
+                    'version': version,
+                    'fileName': f.name,
+                    'sha256': sha256,
+                    'fileSize': size,
+                    'isCustom': True
+                }
+                mods.append(mod_entry)
+                print(f"  Found custom: {name} v{version} ({f.name})")
+    else:
+        # Third-party mods: root-level .jar files only
+        for f in sorted(folder.glob("*.jar")):
+            if f.name == 'gradle-wrapper.jar':
+                continue
+            name, version = parse_mod_filename(f.name)
+            sha256 = calculate_sha256(str(f))
+            size = f.stat().st_size
+            mod_entry = {
+                'name': name,
+                'version': version,
+                'fileName': f.name,
+                'sha256': sha256,
+                'fileSize': size,
+                'isCustom': False
+            }
+            mods.append(mod_entry)
+            print(f"  Found: {name} v{version} ({f.name})")
 
     return mods
 
@@ -142,6 +175,14 @@ def update_manifest(
         manifest = json.load(f)
 
     existing_mods = {m['fileName']: m for m in manifest.get('clientMods', [])}
+
+    # Remove stale entries that no longer exist on disk
+    current_filenames = {m['fileName'] for m in client_mods}
+    manifest['clientMods'] = [
+        m for m in manifest.get('clientMods', [])
+        if m['fileName'] in current_filenames
+    ]
+    existing_mods = {m['fileName']: m for m in manifest['clientMods']}
 
     for mod in client_mods:
         if mod['fileName'] in existing_mods:
