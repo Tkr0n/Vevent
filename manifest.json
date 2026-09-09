@@ -1,9 +1,8 @@
 {
   "launcherVersion": "1.0.0",
   "launcherDownloadUrl": "https://github.com/Tkr0n/Vevent/releases/latest/download/VerkkuCraftLauncher.exe",
-  "serverJarUrl": "https://fill-data.papermc.io/v1/objects/cabed3ae77cf55deba7c7d8722bc9cfd5e991201c211665f9265616d9fe5c77b/paper-1.20.4-499.jar",
-  "serverVersion": "1.21.1",
-  "paperBuild": "499",
+  "serverJarUrl": "https://cdn.modrinth.com/data/6oyMM4yX/versions/fabric-api-0.160.0+26.2.jar",
+  "serverVersion": "26.2",
   "plugins": [
     {
       "name": "vEventDrops",
@@ -218,15 +217,6 @@
       "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/voicechat-fabric-2.6.23+26.2.jar",
       "sha256": "497ed79f6b8021984f10abebb784489f59ffc3e629c28116f068aeaa5ae9d749",
       "fileSize": 5580740
-    },
-    {
-      "name": "VerkkuCraft Title Screen",
-      "modrinthProjectId": "",
-      "version": "1.0.0",
-      "fileName": "verkku-title-1.0.0.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/verkku-title-1.0.0.jar",
-      "sha256": "69d59d4e64ae25b2708fe35cb8fd5916bec2c94c7e0a12fea5919784ce2d4fec",
-      "fileSize": 72486
     },
     {
       "name": "Verkku Hardcore Hud",
