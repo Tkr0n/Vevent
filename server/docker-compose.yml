@@ -1,9 +1,7 @@
-# Servidor Minecraft VerkkuCraft (Fabric 1.21.1) para Raspberry Pi.
+# Servidor Minecraft VerkkuCraft (Fabric 26.2) para Raspberry Pi.
 # Uso en la RPi: copiar este archivo a /mc-server/docker-compose.yaml y luego:
 #   cd /mc-server && sudo docker compose down && sudo docker compose up -d
 # Los mods se descargan automáticamente de Modrinth (misma lista que el launcher).
-# NOTA: enhanced-ai y majruszs-progressive-difficulty NO están incluidos:
-#   enhanced-ai es solo Forge/NeoForge y majruszs no tiene versión 1.21.1.
 services:
   mc:
     image: itzg/minecraft-server:java21
@@ -15,7 +13,7 @@ services:
     environment:
       EULA: "TRUE"
       TYPE: "FABRIC"
-      VERSION: "1.21.1" # Fijado a 1.21.1 para coincidir con el launcher
+      VERSION: "26.2"
       MEMORY: "8G" # Ajusta según la RAM de tu RPi
       USE_AIKAR_FLAGS: "true"
       ENABLE_RCON: "true"
@@ -24,24 +22,22 @@ services:
         fabric-api
         lithium
         ferrite-core
-        krypton
+        cloth-config
         chunky
-        simple-voice-chat
         luckperms
         travelersbackpack
         cardinal-components-api
         lootr
-        when-dungeons-arise
-        yungs-better-dungeons
-        yungs-better-strongholds
-        yungs-better-mineshafts
-        yigd
-        cloth-config
-        yungs-api
+        simple-voice-chat
         jei
         jade
-        adventurers-beyond
-        terrablender:beta
+        journeymap
+        appleskin
+        cleanhud
+        mob plaque
+        mutant-monsters
+        illager-invasion
+        player-revive
     dns:
       - 1.1.1.1
       - 8.8.8.8
