@@ -27,8 +27,9 @@ public partial class MainWindow : FluentWindow
         if (DataContext is not MainViewModel viewModel) return;
 
         var baseDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "VerkkuCraft");
-        var modrinthService = new ModrinthService(new HttpDownloader());
-        _shaderInstaller = new ShaderInstallerService(modrinthService, baseDir);
+        var downloader = new HttpDownloader();
+        var modrinthService = new ModrinthService(downloader);
+        _shaderInstaller = new ShaderInstallerService(modrinthService, downloader, baseDir);
 
         var detectedShaders = viewModel.DetectShaders();
         if (detectedShaders.Count > 0)

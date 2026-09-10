@@ -1,4 +1,5 @@
 using System.IO;
+using VerkkuCraftLauncher.Helpers;
 using VerkkuCraftLauncher.Models;
 
 namespace VerkkuCraftLauncher.Services;
@@ -6,11 +7,13 @@ namespace VerkkuCraftLauncher.Services;
 public class ShaderInstallerService
 {
     private readonly ModrinthService _modrinth;
+    private readonly HttpDownloader _downloader;
     private readonly string _baseDir;
 
-    public ShaderInstallerService(ModrinthService modrinth, string baseDir)
+    public ShaderInstallerService(ModrinthService modrinth, HttpDownloader downloader, string baseDir)
     {
         _modrinth = modrinth;
+        _downloader = downloader;
         _baseDir = baseDir;
     }
 
@@ -49,21 +52,20 @@ public class ShaderInstallerService
             }
         }
 
-        // Check and install Iris/Sodium if needed
+        // Check and install Iris/Sodium with dependency-aware resolution
         var modsDir = Path.Combine(_baseDir, "game", mcVersion, "mods");
         Directory.CreateDirectory(modsDir);
 
+        // Separate already-installed mods from those needing download
+        var toDownload = new List<ShaderModInfo>();
         foreach (var mod in shaderMods)
         {
-            progress?.Report(new DownloadProgress(0, $"Procesando {mod.Name}..."));
-
             if (string.IsNullOrEmpty(mod.ModrinthProjectId))
             {
                 progress?.Report(new DownloadProgress(0, $"{mod.Name}: sin ID de Modrinth, omitido"));
                 continue;
             }
 
-            // Check if mod already exists (case-insensitive)
             var existingMod = Directory.GetFiles(modsDir, "*.jar")
                 .FirstOrDefault(f => Path.GetFileName(f).Contains(mod.Name, StringComparison.OrdinalIgnoreCase));
             if (existingMod != null)
@@ -73,17 +75,51 @@ public class ShaderInstallerService
                 continue;
             }
 
+            toDownload.Add(mod);
+        }
+
+        if (toDownload.Count > 0)
+        {
+            progress?.Report(new DownloadProgress(0, "Resolviendo versiones compatibles..."));
+
+            // Build mod key -> modrinth ID mapping for dependency resolution
+            var modKeyMap = new Dictionary<string, string>();
+            foreach (var mod in toDownload)
+            {
+                modKeyMap[mod.Name] = mod.ModrinthProjectId;
+            }
+
             try
             {
-                progress?.Report(new DownloadProgress(0, $"Descargando {mod.Name}..."));
-                var path = await _modrinth.DownloadModAsync(mod.ModrinthProjectId, mcVersion, "fabric", modsDir, ct);
-                result.ModsInstalled.Add(mod.Name);
-                progress?.Report(new DownloadProgress(0, $"{mod.Name} instalado: {Path.GetFileName(path)}"));
+                // Resolve all mods together with dependency checking
+                var resolved = await _modrinth.ResolveCompatibleVersionsAsync(modKeyMap, mcVersion, "fabric", ct);
+
+                foreach (var mod in toDownload)
+                {
+                    if (resolved.TryGetValue(mod.Name, out var info))
+                    {
+                        var destPath = Path.Combine(modsDir, info.FileName);
+                        if (!File.Exists(destPath))
+                        {
+                            await _downloader.DownloadFileAsync(info.Url, destPath, null, ct);
+                        }
+                        result.ModsInstalled.Add(mod.Name);
+                        progress?.Report(new DownloadProgress(0, $"{mod.Name} instalado: {info.FileName}"));
+                    }
+                    else
+                    {
+                        result.Errors.Add($"{mod.Name}: no se encontro version compatible");
+                        progress?.Report(new DownloadProgress(0, $"Error {mod.Name}: version incompatible"));
+                    }
+                }
             }
             catch (Exception ex)
             {
-                result.Errors.Add($"{mod.Name}: {ex.Message}");
-                progress?.Report(new DownloadProgress(0, $"Error {mod.Name}: {ex.Message}"));
+                foreach (var mod in toDownload)
+                {
+                    result.Errors.Add($"{mod.Name}: {ex.Message}");
+                }
+                progress?.Report(new DownloadProgress(0, $"Error resolviendo versiones: {ex.Message}"));
             }
         }
 

@@ -7,6 +7,10 @@ group = project.group
 version = project.version
 base { archivesName = project.name }
 
+loom {
+    accessWidenerPath = file("src/main/resources/verkku.accesswidener")
+}
+
 repositories {
     mavenCentral()
 }
