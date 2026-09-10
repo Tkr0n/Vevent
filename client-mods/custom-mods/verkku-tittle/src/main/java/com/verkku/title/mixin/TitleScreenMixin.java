@@ -13,7 +13,6 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -23,12 +22,6 @@ import java.util.Map;
 
 @Mixin(TitleScreen.class)
 public abstract class TitleScreenMixin {
-    @Shadow
-    protected abstract void clearWidgets();
-
-    @Shadow
-    protected abstract <T extends net.minecraft.client.gui.components.events.GuiEventListener & net.minecraft.client.gui.components.Renderable & net.minecraft.client.gui.narration.NarratableEntry> T addRenderableWidget(T widget);
-
     @Unique
     private static final Identifier VERTKKU_LOGO = Identifier.fromNamespaceAndPath(
             VerkkuTitleMod.MOD_ID, "textures/title/logo.png"
@@ -37,7 +30,7 @@ public abstract class TitleScreenMixin {
     @Inject(method = "init", at = @At("RETURN"))
     private void onInit(CallbackInfo ci) {
         TitleScreen screen = (TitleScreen) (Object) this;
-        this.clearWidgets();
+        screen.clearWidgets();
 
         Minecraft client = Minecraft.getInstance();
         int centerX = screen.width / 2;
@@ -67,7 +60,7 @@ public abstract class TitleScreenMixin {
                 }
         ).bounds(centerX - buttonWidth / 2, screen.height - 50, buttonWidth, buttonHeight).build();
 
-        this.addRenderableWidget(connectButton);
+        screen.addRenderableWidget(connectButton);
     }
 
     @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
