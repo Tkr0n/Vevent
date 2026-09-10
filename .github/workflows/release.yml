@@ -25,22 +25,20 @@ jobs:
           distribution: temurin
           java-version: 25
 
-      - name: Setup Gradle 9.5
+      - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "9.5"
 
       - name: Build server plugin
         working-directory: server-plugin
-        run: gradle build -PpluginVersion="${GITHUB_REF_NAME#v}"
+        run: ./gradlew build -PpluginVersion="${GITHUB_REF_NAME#v}"
 
       - name: Build verkku-hardcore-hud
         working-directory: client-mods/custom-mods/verkku-hardcore-hud
-        run: gradle build
+        run: ./gradlew build
 
       - name: Build verkku-tittle
         working-directory: client-mods/custom-mods/verkku-tittle
-        run: gradle build
+        run: ./gradlew build
 
       - name: Generate manifest from mods
         run: python3 scripts/generate_manifest.py "${GITHUB_REF_NAME}" "${GITHUB_REPOSITORY}"
