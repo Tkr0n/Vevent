@@ -41,7 +41,7 @@ public class MinecraftLauncher
             FileName = javaPath,
             Arguments = arguments,
             WorkingDirectory = gameDirectory,
-            UseShellExecute = false
+            UseShellExecute = true
         });
 
         if (process == null)
