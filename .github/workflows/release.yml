@@ -34,8 +34,12 @@ jobs:
         working-directory: server-plugin
         run: gradle build -PpluginVersion="${GITHUB_REF_NAME#v}"
 
-      - name: Build custom Fabric mod
-        working-directory: client-mods/custom-mods/fabric-mod
+      - name: Build verkku-hardcore-hud
+        working-directory: client-mods/custom-mods/verkku-hardcore-hud
+        run: gradle build
+
+      - name: Build verkku-tittle
+        working-directory: client-mods/custom-mods/verkku-tittle
         run: gradle build
 
       - name: Generate manifest from mods
@@ -58,7 +62,8 @@ jobs:
         with:
           files: |
             server-plugin/build/libs/*.jar
-            client-mods/custom-mods/fabric-mod/build/libs/*.jar
+            client-mods/custom-mods/verkku-hardcore-hud/build/libs/*.jar
+            client-mods/custom-mods/verkku-tittle/build/libs/*.jar
             client-mods/mods/*.jar
             manifest.json
           generate_release_notes: true

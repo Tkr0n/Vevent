@@ -1,0 +1,27 @@
+{
+    "schemaVersion": 1,
+    "id": "verkku-title",
+    "version": "${version}",
+    "name": "VerkkuCraft Title Screen",
+    "description": "Custom title screen for VerkkuCraft server",
+    "authors": ["VerkkuCraft"],
+    "contact": {},
+    "license": "MIT",
+    "icon": "assets/verkku/textures/title/logo.png",
+    "environment": "client",
+    "entrypoints": {
+        "client": ["com.verkku.title.VerkkuTitleMod"]
+    },
+    "mixins": [
+        {
+            "config": "verkku-title.mixins.json",
+            "environment": "client"
+        }
+    ],
+    "accessWidener": "verkku.accesswidener",
+    "depends": {
+        "fabricloader": ">=0.19.5",
+        "minecraft": "26.2",
+        "java": ">=21"
+    }
+}

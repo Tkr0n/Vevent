@@ -3,12 +3,9 @@ plugins {
     id 'java'
 }
 
-version = project.mod_version
-group = project.maven_group
-
-base {
-    archivesName = project.archives_base_name
-}
+group = project.group
+version = project.version
+base { archivesName = project.name }
 
 repositories {
     mavenCentral()
@@ -35,11 +32,4 @@ tasks.withType(JavaCompile).configureEach {
 java {
     sourceCompatibility = JavaVersion.VERSION_25
     targetCompatibility = JavaVersion.VERSION_25
-    withSourcesJar()
-}
-
-jar {
-    from("LICENSE") {
-        rename { "${it}_${project.base.archivesName.get()}" }
-    }
 }
