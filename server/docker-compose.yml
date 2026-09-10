@@ -34,13 +34,12 @@ services:
         journeymap
         appleskin
         clean_hud
-        mob-plaques
-        mutant-monsters
-        illager-invasion
-        player-revive
-        codxlib
-        forge-config-api-port
-        puzzles-lib
+         mob-plaques
+         mutant-monsters
+         illager-invasion
+         codxlib
+         forge-config-api-port
+         puzzles-lib
     dns:
       - 1.1.1.1
       - 8.8.8.8

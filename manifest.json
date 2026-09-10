@@ -183,16 +183,7 @@
       "fileSize": 1367834
     },
     {
-      "name": "Player Revive V3.0",
-      "modrinthProjectId": "",
-      "version": "",
-      "fileName": "player-revive-v3.0-mc1.21.1.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/player-revive-v3.0-mc1.21.1.jar",
-      "sha256": "c58a03afae45f42d8f63d3ab7322cdc5c8efcea723e3ef32709810b99553bf03",
-      "fileSize": 37684
-    },
-    {
-      "name": "Skinrestorer",
+      "name": "Mutantmonsters V26.2.2",
       "modrinthProjectId": "",
       "version": "2.11.0+26.1",
       "fileName": "skinrestorer-2.11.0+26.1-fabric.jar",

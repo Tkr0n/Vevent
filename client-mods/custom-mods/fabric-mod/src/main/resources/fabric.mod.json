@@ -12,10 +12,9 @@
   "entrypoints": {
     "client": ["com.verkku.title.VerkkuTitleMod"]
   },
-  "mixins": ["verkku-title.mixins.json"],
   "depends": {
-    "fabricloader": ">=0.16.0",
-    "minecraft": "~1.21.1",
-    "java": ">=21"
+    "fabricloader": ">=0.19.5",
+    "minecraft": "26.2",
+    "java": ">=25"
   }
 }
