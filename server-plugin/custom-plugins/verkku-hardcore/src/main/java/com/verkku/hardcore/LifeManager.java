@@ -1,10 +1,12 @@
 package com.verkku.hardcore;
 
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import org.yaml.snakeyaml.Yaml;
 
-import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -19,7 +21,7 @@ public class LifeManager {
 
     public LifeManager(MinecraftServer server) {
         this.server = server;
-        this.dataFile = server.getServerDirectory().resolve("player-lives.yml");
+        this.dataFile = server.getServerDirectory().resolve("player-lives.nbt");
         this.playerLives = new HashMap<>();
         this.maxLives = 3;
         load();
@@ -85,57 +87,55 @@ public class LifeManager {
 
     public void load() {
         if (!Files.exists(dataFile)) {
-            HardcoreMod.LOGGER.info("No player-lives.yml found, starting fresh");
+            HardcoreMod.LOGGER.info("No player-lives.nbt found, starting fresh");
             return;
         }
 
         try {
-            Yaml yaml = new Yaml();
-            try (InputStream inputStream = Files.newInputStream(dataFile)) {
-                Map<String, Object> data = yaml.load(inputStream);
-
-                if (data == null || !data.containsKey("players")) {
-                    return;
-                }
-
-                @SuppressWarnings("unchecked")
-                Map<String, Map<String, Object>> players = (Map<String, Map<String, Object>>) data.get("players");
-                
-                for (Map.Entry<String, Map<String, Object>> entry : players.entrySet()) {
-                    UUID uuid = UUID.fromString(entry.getKey());
-                    Map<String, Object> playerData = entry.getValue();
-                    String name = (String) playerData.get("name");
-                    int lives = (int) playerData.get("lives");
-                    playerLives.put(uuid, new PlayerLife(name, lives));
-                }
-
-                HardcoreMod.LOGGER.info("Loaded lives for {} players", playerLives.size());
+            CompoundTag root = NbtIo.readCompressed(dataFile, NbtAccounter.unlimitedHeap());
+            var playersOpt = root.getList("players");
+            if (playersOpt.isEmpty()) {
+                return;
             }
+
+            ListTag playersList = playersOpt.get();
+            for (int i = 0; i < playersList.size(); i++) {
+                var entryOpt = playersList.getCompound(i);
+                if (entryOpt.isEmpty()) continue;
+                CompoundTag entry = entryOpt.get();
+
+                var uuidOpt = entry.getString("uuid");
+                var nameOpt = entry.getString("name");
+                var livesOpt = entry.getInt("lives");
+                if (uuidOpt.isPresent() && nameOpt.isPresent() && livesOpt.isPresent()) {
+                    UUID uuid = UUID.fromString(uuidOpt.get());
+                    playerLives.put(uuid, new PlayerLife(nameOpt.get(), livesOpt.get()));
+                }
+            }
+
+            HardcoreMod.LOGGER.info("Loaded lives for {} players", playerLives.size());
         } catch (Exception e) {
-            HardcoreMod.LOGGER.error("Failed to load player-lives.yml", e);
+            HardcoreMod.LOGGER.error("Failed to load player-lives.nbt", e);
         }
     }
 
     public void save() {
         try {
-            Yaml yaml = new Yaml();
-            Map<String, Object> data = new HashMap<>();
-            Map<String, Map<String, Object>> players = new HashMap<>();
+            CompoundTag root = new CompoundTag();
+            ListTag playersList = new ListTag();
 
             for (Map.Entry<UUID, PlayerLife> entry : playerLives.entrySet()) {
-                Map<String, Object> playerData = new HashMap<>();
-                playerData.put("name", entry.getValue().name);
-                playerData.put("lives", entry.getValue().lives);
-                players.put(entry.getKey().toString(), playerData);
+                CompoundTag playerTag = new CompoundTag();
+                playerTag.putString("uuid", entry.getKey().toString());
+                playerTag.putString("name", entry.getValue().name);
+                playerTag.putInt("lives", entry.getValue().lives);
+                playersList.add(playerTag);
             }
 
-            data.put("players", players);
-
-            try (Writer writer = new OutputStreamWriter(Files.newOutputStream(dataFile))) {
-                yaml.dump(data, writer);
-            }
+            root.put("players", playersList);
+            NbtIo.writeCompressed(root, dataFile);
         } catch (Exception e) {
-            HardcoreMod.LOGGER.error("Failed to save player-lives.yml", e);
+            HardcoreMod.LOGGER.error("Failed to save player-lives.nbt", e);
         }
     }
 

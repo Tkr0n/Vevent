@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
 
 import java.util.Map;
 
@@ -63,10 +64,18 @@ public abstract class TitleScreenMixin {
         screen.addRenderableWidget(connectButton);
     }
 
-    @Inject(method = "extractRenderState", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "extractRenderState", at = @At("RETURN"))
     private void onExtractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta, CallbackInfo ci) {
         TitleScreen screen = (TitleScreen) (Object) this;
 
+        // Cubrir el logo vanilla con un rectángulo del color de fondo
+        context.fill(
+                screen.width / 2 - 100, 20,
+                screen.width / 2 + 100, 90,
+                0xFF1A1A2E
+        );
+
+        // Dibujar nuestro logo encima
         context.blit(
                 RenderPipelines.GUI_TEXTURED,
                 VERTKKU_LOGO,
