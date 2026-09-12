@@ -11,23 +11,22 @@ public class JavaManager
 {
     private readonly HttpDownloader? _downloader;
 
-    /// <summary>Minecraft 1.21.x requires Java 21+.</summary>
-    public const int RequiredJavaMajor = 21;
+    /// <summary>Minecraft 26.2 requires Java 25+.</summary>
+    public const int RequiredJavaMajor = 25;
 
     /// <summary>
-    /// JRE 21 download sources, tried in order. First is the GitHub-hosted
-    /// Adoptium asset (same CDN as the rest of our dependencies); second is
-    /// the Adoptium API which always resolves to the newest GA build.
+    /// JRE 25 download sources, tried in order. First is the GitHub-hosted
+    /// Adoptium asset; second is the Adoptium API which always resolves to the newest GA build.
     /// </summary>
-    private static readonly string[] Temurin21JreUrls =
+    private static readonly string[] Temurin25JreUrls =
     [
-        "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jre_x64_windows_hotspot_21.0.12.1_1.zip",
-        "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse"
+        "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-25.0.4.1%2B1/OpenJDK25U-jre_x64_windows_hotspot_25.0.4.1_1.zip",
+        "https://api.adoptium.net/v3/binary/latest/25/ga/windows/x64/jre/hotspot/normal/eclipse"
     ];
 
     private static readonly string ManagedJavaDir = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "VerkkuCraft", "java21");
+        "VerkkuCraft", "java25");
 
     private static readonly string[] JavaSearchPaths =
     [
@@ -110,23 +109,23 @@ public class JavaManager
 
         if (_downloader == null)
             throw new InvalidOperationException(
-                "Se requiere Java 21 o superior para Minecraft 1.21, pero no se encontró ninguna instalación. " +
-                "Instala Eclipse Temurin 21 (https://adoptium.net/) y reinicia el launcher.");
+                "Se requiere Java 25 o superior para Minecraft 26.2, pero no se encontró ninguna instalación. " +
+                "Instala Eclipse Temurin 25 (https://adoptium.net/) y reinicia el launcher.");
 
-        AppLogger.Log("No suitable Java found, downloading Temurin 21 JRE...");
-        progress?.Report(new DownloadProgress(0, "Descargando Java 21..."));
+        AppLogger.Log("No suitable Java found, downloading Temurin 25 JRE...");
+        progress?.Report(new DownloadProgress(0, "Descargando Java 25..."));
 
-        var zipPath = Path.Combine(Path.GetTempPath(), "temurin21-jre.zip");
+        var zipPath = Path.Combine(Path.GetTempPath(), "temurin25-jre.zip");
         var downloaded = false;
         Exception? lastError = null;
-        foreach (var url in Temurin21JreUrls)
+        foreach (var url in Temurin25JreUrls)
         {
             try
             {
-                AppLogger.Log($"Trying Java 21 source: {url}");
+                AppLogger.Log($"Trying Java 25 source: {url}");
                 await _downloader.DownloadFileAsync(
                     url, zipPath,
-                    new Progress<int>(p => progress?.Report(new DownloadProgress(p, "Descargando Java 21..."))),
+                    new Progress<int>(p => progress?.Report(new DownloadProgress(p, "Descargando Java 25..."))),
                     cancellationToken);
                 downloaded = true;
                 break;
@@ -134,17 +133,17 @@ public class JavaManager
             catch (Exception ex)
             {
                 lastError = ex;
-                AppLogger.Log($"Java 21 source failed, trying next: {ex.Message}");
+                AppLogger.Log($"Java 25 source failed, trying next: {ex.Message}");
             }
         }
 
         if (!downloaded)
             throw new InvalidOperationException(
-                "No se pudo descargar Java 21 automáticamente. " +
+                "No se pudo descargar Java 25 automáticamente. " +
                 "Descárgalo manualmente desde https://adoptium.net/ y reinicia el launcher.",
                 lastError);
 
-        progress?.Report(new DownloadProgress(100, "Instalando Java 21..."));
+        progress?.Report(new DownloadProgress(100, "Instalando Java 25..."));
         await Task.Run(() =>
         {
             if (Directory.Exists(ManagedJavaDir))
@@ -157,11 +156,11 @@ public class JavaManager
 
         if (SelectJava(null) == null)
             throw new InvalidOperationException(
-                "No se pudo instalar Java 21 automáticamente. " +
+                "No se pudo instalar Java 25 automáticamente. " +
                 "Descárgalo manualmente desde https://adoptium.net/ y reinicia el launcher.");
 
-        AppLogger.Log("Temurin 21 JRE installed.");
-        progress?.Report(new DownloadProgress(100, "Java 21 instalado"));
+        AppLogger.Log("Temurin 25 JRE installed.");
+        progress?.Report(new DownloadProgress(100, "Java 25 instalado"));
     }
 
     private static string NormalizeToJavaw(string path)
