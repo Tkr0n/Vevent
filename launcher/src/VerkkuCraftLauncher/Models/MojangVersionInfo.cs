@@ -27,6 +27,8 @@ public class MojangVersionInfo
 {
     public string Id { get; set; } = string.Empty;
     public string ClientJarUrl { get; set; } = string.Empty;
+    public string ClientJarSha1 { get; set; } = string.Empty;
+    public long ClientJarSize { get; set; }
     public string AssetIndexId { get; set; } = string.Empty;
     public string AssetIndexUrl { get; set; } = string.Empty;
     public List<MojangLibrary> Libraries { get; set; } = new();

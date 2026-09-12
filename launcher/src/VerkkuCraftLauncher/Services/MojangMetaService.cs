@@ -26,10 +26,13 @@ public class MojangMetaService
         var versionJson = await _downloader.DownloadStringAsync(versionUrl, ct);
         using var doc = JsonDocument.Parse(versionJson);
         var root = doc.RootElement;
+        var clientDl = root.GetProperty("downloads").GetProperty("client");
         var info = new MojangVersionInfo
         {
             Id = mcVersion,
-            ClientJarUrl = root.GetProperty("downloads").GetProperty("client").GetProperty("url").GetString()!,
+            ClientJarUrl = clientDl.GetProperty("url").GetString()!,
+            ClientJarSha1 = clientDl.TryGetProperty("sha1", out var cSha) ? cSha.GetString()! : "",
+            ClientJarSize = clientDl.TryGetProperty("size", out var cSize) ? cSize.GetInt64() : 0,
             AssetIndexId = root.GetProperty("assetIndex").GetProperty("id").GetString()!,
             AssetIndexUrl = root.GetProperty("assetIndex").GetProperty("url").GetString()!,
         };
@@ -80,8 +83,11 @@ public class MojangMetaService
         Directory.CreateDirectory(nativesDir);
 
         var clientJar = Path.Combine(versionDir, $"{info.Id}.jar");
-        if (!File.Exists(clientJar))
+        var clientValid = await IsArtifactValidAsync(clientJar, new MojangArtifact
+            { Path = $"{info.Id}.jar", Url = info.ClientJarUrl, Sha1 = info.ClientJarSha1, Size = info.ClientJarSize });
+        if (!clientValid)
         {
+            if (File.Exists(clientJar)) File.Delete(clientJar);
             progress?.Report(new DownloadProgress(0, $"Descargando cliente {info.Id}.jar..."));
             await _downloader.DownloadFileAsync(info.ClientJarUrl, clientJar,
                 new Progress<int>(p => progress?.Report(new DownloadProgress(p, $"Descargando cliente {info.Id}.jar..."))), ct);
@@ -101,21 +107,30 @@ public class MojangMetaService
             {
                 var tmp = Path.Combine(Path.GetTempPath(), Path.GetFileName(natArt.Path));
                 var pct = done * 100 / allowed.Count;
-                progress?.Report(new DownloadProgress(pct, $"Descargando natives {libShortName}..."));
-                if (!File.Exists(tmp)) await _downloader.DownloadFileAsync(natArt.Url, tmp,
-                    new Progress<int>(p => progress?.Report(new DownloadProgress(pct + p / allowed.Count, $"Descargando natives {libShortName}..."))), ct);
+                var nativeValid = await IsArtifactValidAsync(tmp, natArt);
+                if (!nativeValid)
+                {
+                    if (File.Exists(tmp)) File.Delete(tmp);
+                    progress?.Report(new DownloadProgress(pct, $"Descargando natives {libShortName}..."));
+                    await _downloader.DownloadFileAsync(natArt.Url, tmp,
+                        new Progress<int>(p => progress?.Report(new DownloadProgress(pct + p / allowed.Count, $"Descargando natives {libShortName}..."))), ct);
+                }
                 System.IO.Compression.ZipFile.ExtractToDirectory(tmp, nativesDir, overwriteFiles: true);
             }
             else if (lib.Downloads_Artifact != null)
             {
                 var dest = Path.Combine(libsDir, lib.Downloads_Artifact.Path.Replace('/', Path.DirectorySeparatorChar));
                 Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-                if (!File.Exists(dest))
+                var valid = await IsArtifactValidAsync(dest, lib.Downloads_Artifact);
+                if (!valid)
                 {
                     var pct = done * 100 / allowed.Count;
                     progress?.Report(new DownloadProgress(pct, $"Descargando lib {libShortName}..."));
+                    if (File.Exists(dest)) File.Delete(dest);
                     await _downloader.DownloadFileAsync(lib.Downloads_Artifact.Url, dest,
                         new Progress<int>(p => progress?.Report(new DownloadProgress(pct + p / allowed.Count, $"Descargando lib {libShortName}..."))), ct);
+                    if (!await IsArtifactValidAsync(dest, lib.Downloads_Artifact))
+                        throw new InvalidOperationException($"Lib {libShortName} corrupta tras descarga — verifique conexión");
                 }
                 classpath.Add(dest);
             }
@@ -145,6 +160,19 @@ public class MojangMetaService
         progress?.Report(new DownloadProgress(100, "Cliente descargado"));
 
         return new GameFiles { Classpath = classpath, NativesDir = nativesDir, AssetsDir = assetsDir };
+    }
+
+    private static async Task<bool> IsArtifactValidAsync(string path, MojangArtifact art)
+    {
+        if (!File.Exists(path)) return false;
+        var fi = new FileInfo(path);
+        if (fi.Length != art.Size) return false;
+        if (string.IsNullOrEmpty(art.Sha1)) return true;
+        using var sha = System.Security.Cryptography.SHA1.Create();
+        using var fs = File.OpenRead(path);
+        var hash = await sha.ComputeHashAsync(fs);
+        var computed = Convert.ToHexString(hash).ToLowerInvariant();
+        return computed == art.Sha1.ToLowerInvariant();
     }
 
     public static bool IsAllowedOnWindows(MojangLibrary lib)
