@@ -43,6 +43,8 @@ services:
         skinrestorer
         trash-slot
         tree-harvester
+        balm
+        collective
     dns:
       - 1.1.1.1
       - 8.8.8.8

@@ -238,6 +238,24 @@
       "fileSize": 1145463
     },
     {
+      "name": "Balm",
+      "modrinthProjectId": "",
+      "version": "26.2.0.8",
+      "fileName": "balm-fabric-26.2-26.2.0.8.jar",
+      "downloadUrl": "",
+      "sha256": "8d0e1ca19c81fb072642bbc074c056a521d81a2541f710e6dc883c0ae940bacb",
+      "fileSize": 1198089
+    },
+    {
+      "name": "Collective",
+      "modrinthProjectId": "",
+      "version": "26.2.0-8.39",
+      "fileName": "collective-26.2.0-8.39.jar",
+      "downloadUrl": "",
+      "sha256": "ce0704323bc06d381ed0aa63029fcd9f78289120d70c6ea4a8a6c8cf9f4ed26a",
+      "fileSize": 1084412
+    },
+    {
       "name": "SkinRestorer",
       "modrinthProjectId": "skinrestorer",
       "version": "2.11.0+26.1",
