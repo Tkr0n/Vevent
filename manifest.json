@@ -281,20 +281,6 @@
       "downloadUrl": "",
       "sha256": "008535b661f32e7dc2dc339551fd449228c0bd567a3a7290e43ae789dab6adcd",
       "fileSize": 123194
-    },
-    {
-      "name": "Iris",
-      "modrinthProjectId": "iris",
-      "version": "",
-      "fileName": "",
-      "downloadUrl": ""
-    },
-    {
-      "name": "Sodium",
-      "modrinthProjectId": "sodium",
-      "version": "",
-      "fileName": "",
-      "downloadUrl": ""
     }
   ],
   "shaderMods": [],
