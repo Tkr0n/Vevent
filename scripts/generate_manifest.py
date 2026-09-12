@@ -163,6 +163,15 @@ def generate_download_url(filename: str, tag: str, repo: str = "Tkr0n/Vevent") -
     return f"https://github.com/{repo}/releases/download/{tag}/{filename}"
 
 
+MODRINTH_MODS = {
+    'iris': 'Iris',
+    'sodium': 'Sodium',
+    'skinrestorer': 'SkinRestorer',
+    'trashslot': 'TrashSlot',
+    'tree-harvester': 'Tree Harvester',
+}
+
+
 def update_manifest(
     manifest_path: str,
     client_mods: list[dict],
@@ -170,18 +179,27 @@ def update_manifest(
     tag: str,
     repo: str = "Tkr0n/Vevent"
 ) -> None:
-    """Update manifest.json with scanned mods and plugins."""
+    """Update manifest.json with scanned mods and plugins.
+
+    Mods on disk get their downloadUrl updated to the current release tag.
+    Mods resolved by Modrinth at runtime (empty fileName) are preserved
+    with their modrinthProjectId so the launcher can resolve them later.
+    """
     with open(manifest_path, 'r', encoding='utf-8') as f:
         manifest = json.load(f)
 
-    existing_mods = {m['fileName']: m for m in manifest.get('clientMods', [])}
-
-    # Remove stale entries that no longer exist on disk
+    # --- Client mods ---
     current_filenames = {m['fileName'] for m in client_mods}
+
+    # Keep entries that:
+    #   1. exist on disk (will be updated below), OR
+    #   2. are Modrinth-resolved (modrinthProjectId set, empty fileName)
     manifest['clientMods'] = [
         m for m in manifest.get('clientMods', [])
-        if m['fileName'] in current_filenames
+        if m.get('fileName') in current_filenames
+        or m.get('modrinthProjectId')
     ]
+
     existing_mods = {m['fileName']: m for m in manifest['clientMods']}
 
     for mod in client_mods:
@@ -202,6 +220,20 @@ def update_manifest(
                 'fileSize': mod['fileSize']
             }
             manifest.setdefault('clientMods', []).append(new_entry)
+
+    # Ensure all Modrinth-resolved mods are in the manifest
+    existing_mr = {m.get('modrinthProjectId') for m in manifest.get('clientMods', [])}
+    for slug, name in MODRINTH_MODS.items():
+        if slug not in existing_mr:
+            manifest['clientMods'].append({
+                'name': name,
+                'modrinthProjectId': slug,
+                'version': '',
+                'fileName': '',
+                'downloadUrl': '',
+                'sha256': '',
+                'fileSize': 0
+            })
 
     existing_plugins = {p['fileName']: p for p in manifest.get('plugins', [])}
 

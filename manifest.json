@@ -31,7 +31,7 @@
     {
       "name": "verkku-hardcore",
       "fileName": "verkku-hardcore-1.0.0.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/verkku-hardcore-1.0.0.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/verkku-hardcore-1.0.0.jar",
       "version": "1.0.0",
       "fileSize": 29427,
       "sha256": "dbc6c9eb5f1cac979c1089cb01788b6b0666d5c791c8434f5cc43b6319a46237"
@@ -43,7 +43,7 @@
       "modrinthProjectId": "",
       "version": "3.0.10",
       "fileName": "appleskin-fabric-mc26.2-3.0.10.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/appleskin-fabric-mc26.2-3.0.10.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/appleskin-fabric-mc26.2-3.0.10.jar",
       "sha256": "e92f4d28973aec7ba9dbbfa74d163a1fadab0288fb3482247eb443cf03aa2178",
       "fileSize": 181627
     },
@@ -52,7 +52,7 @@
       "modrinthProjectId": "",
       "version": "8.0.1",
       "fileName": "cardinal-components-api-8.0.1.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/cardinal-components-api-8.0.1.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/cardinal-components-api-8.0.1.jar",
       "sha256": "f891e8ca72936c276ae9d982310504134772b2e182009475935f77db581c700d",
       "fileSize": 237909
     },
@@ -61,7 +61,7 @@
       "modrinthProjectId": "",
       "version": "1.5.3",
       "fileName": "Chunky-Fabric-1.5.3.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/Chunky-Fabric-1.5.3.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/Chunky-Fabric-1.5.3.jar",
       "sha256": "ecdfc55a0f67f3ec6f40850687615c941ae226bd88f4e06188a7b268fd3da942",
       "fileSize": 354095
     },
@@ -70,7 +70,7 @@
       "modrinthProjectId": "",
       "version": "26.2",
       "fileName": "cleanhud-26.2-2.0.1-mc26.2.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/cleanhud-26.2-2.0.1-mc26.2.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/cleanhud-26.2-2.0.1-mc26.2.jar",
       "sha256": "6f5fa6436ebf945a14b59750ae18b5e0a6c17542576572a71c6f66dab5bef80c",
       "fileSize": 81848
     },
@@ -79,7 +79,7 @@
       "modrinthProjectId": "",
       "version": "26.2.155",
       "fileName": "cloth-config-26.2.155.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/cloth-config-26.2.155.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/cloth-config-26.2.155.jar",
       "sha256": "def4be7639cd66704f7e304d658ea0f6bf490fb4a6eaa2dbf18ec2c3999d6349",
       "fileSize": 1135186
     },
@@ -88,7 +88,7 @@
       "modrinthProjectId": "",
       "version": "0.160.0+26.2",
       "fileName": "fabric-api-0.160.0+26.2.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/fabric-api-0.160.0+26.2.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/fabric-api-0.160.0+26.2.jar",
       "sha256": "5f3dff88e1661166e222213302b25ace6c36dc3683804cbd4b5acf93138ea05e",
       "fileSize": 2542898
     },
@@ -97,7 +97,7 @@
       "modrinthProjectId": "",
       "version": "9.0.0",
       "fileName": "ferritecore-9.0.0-fabric.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/ferritecore-9.0.0-fabric.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/ferritecore-9.0.0-fabric.jar",
       "sha256": "213966c72ed967acc7392beb28a866fba301ff56b9976c2e7801c2db7de6bf22",
       "fileSize": 72677
     },
@@ -106,7 +106,7 @@
       "modrinthProjectId": "",
       "version": "",
       "fileName": "IllagerInvasion-v26.2.0-mc26.2.x-Fabric.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/IllagerInvasion-v26.2.0-mc26.2.x-Fabric.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/IllagerInvasion-v26.2.0-mc26.2.x-Fabric.jar",
       "sha256": "03938ff551de675c36402bae792b1077fa1a6d076929b2c6c609e8735a999b34",
       "fileSize": 2193249
     },
@@ -115,7 +115,7 @@
       "modrinthProjectId": "",
       "version": "26.2.11",
       "fileName": "Jade-mc26.2-Fabric-26.2.11.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/Jade-mc26.2-Fabric-26.2.11.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/Jade-mc26.2-Fabric-26.2.11.jar",
       "sha256": "ffe5d2e83a531c3fbe75ad54095e6a9eafc73a38d5827b4c90bedb4b03618b87",
       "fileSize": 1043764
     },
@@ -124,7 +124,7 @@
       "modrinthProjectId": "",
       "version": "26.2",
       "fileName": "jei-26.2-fabric-30.32.0.209.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/jei-26.2-fabric-30.32.0.209.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/jei-26.2-fabric-30.32.0.209.jar",
       "sha256": "c64028d3c828fea69e3728edfa08c8cc37f63f57a27eadb177403671ce9ffcb5",
       "fileSize": 1883752
     },
@@ -133,7 +133,7 @@
       "modrinthProjectId": "",
       "version": "26.2",
       "fileName": "journeymap-fabric-26.2-6.0.7.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/journeymap-fabric-26.2-6.0.7.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/journeymap-fabric-26.2-6.0.7.jar",
       "sha256": "30dba7e83575f2889527d690d5c66ff17d68929008be73828ada38f39cfbb4d4",
       "fileSize": 4342831
     },
@@ -142,7 +142,7 @@
       "modrinthProjectId": "",
       "version": "0.25.3+mc26.2",
       "fileName": "lithium-fabric-0.25.3+mc26.2.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/lithium-fabric-0.25.3+mc26.2.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/lithium-fabric-0.25.3+mc26.2.jar",
       "sha256": "fdde92e238e8075f89ad7f701f2a3d5854af88ba9a67657184a4407b104ac563",
       "fileSize": 912850
     },
@@ -151,7 +151,7 @@
       "modrinthProjectId": "",
       "version": "26.2",
       "fileName": "lootr-fabric-26.2-1.24.39.121.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/lootr-fabric-26.2-1.24.39.121.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/lootr-fabric-26.2-1.24.39.121.jar",
       "sha256": "3bff544567fd88571df89332876168b6d35b32f668c7e9b0c2591c2bbd8a54e3",
       "fileSize": 1497014
     },
@@ -160,7 +160,7 @@
       "modrinthProjectId": "",
       "version": "5.5.57",
       "fileName": "LuckPerms-Fabric-5.5.57.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/LuckPerms-Fabric-5.5.57.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/LuckPerms-Fabric-5.5.57.jar",
       "sha256": "ba25248ab89e95e83aac845a95e42f3e8743d58bd5b77dced50d1e944a5a658c",
       "fileSize": 1621410
     },
@@ -169,7 +169,7 @@
       "modrinthProjectId": "",
       "version": "",
       "fileName": "MobPlaques-v26.2.0-mc26.2.x-Fabric.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/MobPlaques-v26.2.0-mc26.2.x-Fabric.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/MobPlaques-v26.2.0-mc26.2.x-Fabric.jar",
       "sha256": "9afce40de9f2137af387041cde88dbceff476ed335d90fd9eea2f53245a0db37",
       "fileSize": 76338
     },
@@ -178,25 +178,17 @@
       "modrinthProjectId": "",
       "version": "",
       "fileName": "MutantMonsters-v26.2.2-mc26.2.x-Fabric.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/MutantMonsters-v26.2.2-mc26.2.x-Fabric.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/MutantMonsters-v26.2.2-mc26.2.x-Fabric.jar",
       "sha256": "618b07e168abc83ebbdb548f5247eda0cabc90a40fa0e4ed3a587cbf2ce82e71",
       "fileSize": 1367834
     },
-    {
-      "name": "Mutantmonsters V26.2.2",
-      "modrinthProjectId": "",
-      "version": "2.11.0+26.1",
-      "fileName": "skinrestorer-2.11.0+26.1-fabric.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/skinrestorer-2.11.0+26.1-fabric.jar",
-      "sha256": "f35ea377021cd29d1309b4459eaff9a575cd208530fc0d766d2d985f784e6eaf",
-      "fileSize": 285906
-    },
+
     {
       "name": "Traveler's Backpack",
       "modrinthProjectId": "",
       "version": "26.2",
       "fileName": "travelersbackpack-fabric-26.2-11.3.2.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/travelersbackpack-fabric-26.2-11.3.2.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/travelersbackpack-fabric-26.2-11.3.2.jar",
       "sha256": "b06753dbd277700e97efaefa541e757fa7fd6cdd91538bf4a1df851072b981de",
       "fileSize": 1499083
     },
@@ -205,7 +197,7 @@
       "modrinthProjectId": "",
       "version": "2.6.23",
       "fileName": "voicechat-fabric-2.6.23+26.2.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/voicechat-fabric-2.6.23+26.2.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/voicechat-fabric-2.6.23+26.2.jar",
       "sha256": "497ed79f6b8021984f10abebb784489f59ffc3e629c28116f068aeaa5ae9d749",
       "fileSize": 5580740
     },
@@ -214,7 +206,7 @@
       "modrinthProjectId": "",
       "version": "1.0.0",
       "fileName": "verkku-hardcore-hud-1.0.0.jar",
-      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v0.0.0-test/verkku-hardcore-hud-1.0.0.jar",
+      "downloadUrl": "https://github.com/Tkr0n/Vevent/releases/download/v1.4.1/verkku-hardcore-hud-1.0.0.jar",
       "sha256": "0281192eb78e410bc95d548537a25038ed46d03ef7918bc44014b11365480235",
       "fileSize": 17677
     },
@@ -244,6 +236,33 @@
       "downloadUrl": "https://cdn.modrinth.com/data/QAGBst4M/versions/KU5rZUAR/PuzzlesLib-v26.2.3-mc26.2.x-Fabric.jar",
       "sha256": "3d5c0fa58f75f3cd345bc48a08a783890aab8ef01d1be113088138dda1bf79030a782dd267688c07cc2ea7a7d09710d50797416fc2292c58004cc6ff27c791bd",
       "fileSize": 1145463
+    },
+    {
+      "name": "SkinRestorer",
+      "modrinthProjectId": "skinrestorer",
+      "version": "2.11.0+26.1",
+      "fileName": "skinrestorer-2.11.0+26.1-fabric.jar",
+      "downloadUrl": "",
+      "sha256": "f35ea377021cd29d1309b4459eaff9a575cd208530fc0d766d2d985f784e6eaf",
+      "fileSize": 285906
+    },
+    {
+      "name": "TrashSlot",
+      "modrinthProjectId": "trashslot",
+      "version": "26.2.0.2",
+      "fileName": "trashslot-fabric-26.2-26.2.0.2.jar",
+      "downloadUrl": "",
+      "sha256": "fce0c1149a2c0ea29057be132e5a65b4579411d97b9346b2fb3935531b4c0188",
+      "fileSize": 148579
+    },
+    {
+      "name": "Tree Harvester",
+      "modrinthProjectId": "tree-harvester",
+      "version": "26.2.0-9.4",
+      "fileName": "treeharvester-26.2.0-9.4.jar",
+      "downloadUrl": "",
+      "sha256": "008535b661f32e7dc2dc339551fd449228c0bd567a3a7290e43ae789dab6adcd",
+      "fileSize": 123194
     },
     {
       "name": "Iris",

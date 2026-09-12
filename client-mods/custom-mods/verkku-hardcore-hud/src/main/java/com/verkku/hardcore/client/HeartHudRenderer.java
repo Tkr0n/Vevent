@@ -42,6 +42,16 @@ public class HeartHudRenderer {
             return;
         }
 
+        UUID myUuid = client.player.getUUID();
+        Integer storedLives = playerLives.get(myUuid);
+        if (storedLives != null) {
+            localPlayerLives = storedLives;
+        }
+        Boolean storedKo = koStates.get(myUuid);
+        if (storedKo != null) {
+            localPlayerKo = storedKo;
+        }
+
         long currentTime = System.currentTimeMillis();
         if (currentTime - lastBlinkTime > 500) {
             blinkState = !blinkState;

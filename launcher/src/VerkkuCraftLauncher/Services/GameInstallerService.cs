@@ -99,6 +99,19 @@ public class GameInstallerService
         if (!Directory.Exists(modsDir)) return;
 
         var expectedFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // Always preserve Iris and Sodium — they are Modrinth-resolved and we don't
+        // want them deleted when the Modrinth API is temporarily unreachable.
+        foreach (var file in Directory.GetFiles(modsDir, "*.jar"))
+        {
+            var name = Path.GetFileName(file);
+            if (name.StartsWith("iris-", StringComparison.OrdinalIgnoreCase)
+                || name.StartsWith("sodium-", StringComparison.OrdinalIgnoreCase))
+            {
+                expectedFileNames.Add(name);
+            }
+        }
+
         foreach (var mod in mods)
         {
             if (!string.IsNullOrEmpty(mod.FileName))

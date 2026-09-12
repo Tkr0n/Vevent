@@ -87,6 +87,7 @@ public class KOHandler {
         HardcoreMod.LOGGER.info("KO timeout for {}, decrementing life", player.getName().getString());
 
         boolean hasLives = mod.getLifeManager().decrementLife(player);
+        syncLivesToAllPlayers();
 
         if (!hasLives || mod.getLifeManager().getLives(player) <= 0) {
             mod.getWorldRegenManager().triggerWorldRegeneration();
@@ -145,5 +146,27 @@ public class KOHandler {
         }
 
         ServerPlayNetworking.send(player, new LivesSyncPayload(dataList));
+    }
+
+    /**
+     * Clear KO state for a specific player.
+     * Used when clearing downed state after world regeneration.
+     */
+    public void clearKoState(ServerPlayer player) {
+        UUID uuid = player.getUUID();
+        koTimestamps.remove(uuid);
+        koStates.put(uuid, false);
+        sendKoState(player, false);
+        HardcoreMod.LOGGER.info("Cleared KO state for {}", player.getName().getString());
+    }
+
+    /**
+     * Clear KO state for all online players.
+     * Used when clearing downed state after world regeneration.
+     */
+    public void clearAllKoStates() {
+        for (ServerPlayer player : mod.getServer().getPlayerList().getPlayers()) {
+            clearKoState(player);
+        }
     }
 }

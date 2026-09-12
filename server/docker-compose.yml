@@ -40,6 +40,9 @@ services:
         codxlib
         forge-config-api-port
         puzzles-lib
+        skinrestorer
+        trash-slot
+        tree-harvester
     dns:
       - 1.1.1.1
       - 8.8.8.8

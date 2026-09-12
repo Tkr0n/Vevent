@@ -90,33 +90,38 @@ public class WorldRegenManager {
             mod.getLifeManager().save();
             HardcoreMod.LOGGER.info("Lives data saved");
 
-            // 3. Generate new seed
+            // 3. Clear downed and KO state for ALL players before disconnecting
+            clearDownedStateForAllPlayers(server);
+            mod.getKoHandler().clearAllKoStates();
+            HardcoreMod.LOGGER.info("Cleared downed and KO state for all players");
+
+            // 4. Generate new seed
             long newSeed = new java.util.Random().nextLong();
             HardcoreMod.LOGGER.info("New world seed: {}", newSeed);
 
-            // 4. Write flag file — world deletion happens on NEXT startup
+            // 5. Write flag file — world deletion happens on NEXT startup
             Path gameDir = FabricLoader.getInstance().getGameDir();
             Path flagPath = gameDir.resolve(FLAG_FILE);
             Files.writeString(flagPath, String.valueOf(newSeed));
             HardcoreMod.LOGGER.info("Regeneration flag written to: {}", flagPath);
 
-            // 5. Reset lives for all players
+            // 6. Reset lives for all players
             mod.getLifeManager().resetAllLives();
             HardcoreMod.LOGGER.info("All lives reset");
 
-            // 6. Send regen notification to all clients
+            // 7. Send regen notification to all clients
             ArrayList<ServerPlayer> players = new ArrayList<>(server.getPlayerList().getPlayers());
             WorldRegenPayload payload = new WorldRegenPayload(newSeed);
             for (ServerPlayer player : players) {
                 ServerPlayNetworking.send(player, payload);
             }
 
-            // 7. Disconnect all players
+            // 8. Disconnect all players
             for (ServerPlayer player : players) {
                 player.connection.disconnect(Component.literal("§4§lMundo regenerado. Reconecta en unos segundos..."));
             }
 
-            // 8. Halt immediately — no Thread.sleep, no shutdown hooks
+            // 9. Halt immediately — no Thread.sleep, no shutdown hooks
             // Docker will restart the container, and on startup the flag file
             // will trigger world deletion BEFORE the world loads.
             HardcoreMod.LOGGER.info("Halting server for world regeneration...");
@@ -129,9 +134,45 @@ public class WorldRegenManager {
         }
     }
 
+    /**
+     * Clear downed state for all online players.
+     * This ensures no player reconnects in a downed state after world regeneration.
+     */
+    private void clearDownedStateForAllPlayers(MinecraftServer server) {
+        for (ServerPlayer player : server.getPlayerList().getPlayers()) {
+            try {
+                // Clear Simplerevive downed tags
+                player.removeTag(net.minecraft.resources.ResourceLocation.parse("simplerevive:downed"));
+                player.removeTag(net.minecraft.resources.ResourceLocation.parse("simplerevive:downed.initiated"));
+
+                // Also clear via commands as backup
+                var dispatcher = server.getCommands().getDispatcher();
+                var source = server.createCommandSourceStack()
+                    .withPermission(net.minecraft.server.permissions.PermissionSet.ALL_PERMISSIONS);
+                dispatcher.execute(
+                    "tag " + player.getName().getString() + " remove simplerevive.downed",
+                    source
+                );
+                dispatcher.execute(
+                    "tag " + player.getName().getString() + " remove simplerevive.downed.initiated",
+                    source
+                );
+
+                HardcoreMod.LOGGER.info("Cleared downed state for {}", player.getName().getString());
+            } catch (Exception e) {
+                HardcoreMod.LOGGER.warn("Failed to clear downed state for {}: {}", player.getName().getString(), e.getMessage());
+            }
+        }
+    }
+
     private static void deleteRecursively(Path path) {
         try {
             if (Files.isDirectory(path)) {
+                // Skip datapacks directory — we need to keep our override datapacks
+                if (path.getFileName().toString().equals("datapacks")) {
+                    HardcoreMod.LOGGER.info("Skipping datapacks directory: {}", path);
+                    return;
+                }
                 try (var stream = Files.list(path)) {
                     for (Path child : stream.toList()) {
                         deleteRecursively(child);
